@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="https://fonts.gstatic.com/s/i/materialicons/flight_takeoff/v10/24px.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Sky Travel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-primary: #05080F;
+        --text-primary: #ffffff;
+        --card-bg: rgba(30, 41, 59, 0.4);
+        --card-border: rgba(255, 255, 255, 0.1);
+      }
+      .light-mode {
+        --bg-primary: #f0f4f8;
+        --text-primary: #1e293b;
+        --card-bg: rgba(255, 255, 255, 0.85);
+        --card-border: rgba(255, 255, 255, 1);
+      }
+
+      body {
+        font-family: 'Noto Sans TC', sans-serif;
+        -webkit-tap-highlight-color: transparent;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      /* Hide scrollbar */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      
+      /* Galaxy Header Effect */
+      .galaxy-header {
+        background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+        overflow: hidden;
+        position: relative;
+      }
+      
+      /* Light Mode Sky Header */
+      .light-mode .galaxy-header {
+        background: linear-gradient(to bottom, #7dd3fc 0%, #bae6fd 100%);
+      }
+
+      .stars {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: transparent;
+        z-index: 0;
+      }
+      
+      /* Create stars using box-shadow */
+      .stars::after {
+        content: " ";
+        position: absolute;
+        top: 20px; left: 20px;
+        width: 2px; height: 2px;
+        background: transparent;
+        box-shadow: 
+          10vw 5vh #fff, 20vw 15vh #fff, 30vw 8vh #fff, 40vw 12vh #fff, 
+          50vw 4vh #fff, 60vw 18vh #fff, 70vw 9vh #fff, 80vw 14vh #fff,
+          90vw 6vh #fff, 15vw 22vh #fff, 35vw 28vh #fff, 55vw 24vh #fff;
+        border-radius: 50%;
+        animation: twinkle 4s infinite alternate;
+      }
+      
+      .light-mode .stars::after {
+         display: none; /* No stars in day mode */
+      }
+      
+      /* Clouds for Light Mode (Simplified with CSS gradient/shapes) */
+      .light-mode .galaxy-header::before {
+        content: '';
+        position: absolute;
+        top: -20px; right: -20px;
+        width: 200px; height: 200px;
+        background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+        border-radius: 50%;
+        opacity: 0.6;
+        filter: blur(20px);
+      }
+
+      @keyframes twinkle {
+        0% { opacity: 0.3; transform: scale(0.8); }
+        100% { opacity: 1; transform: scale(1.2); }
+      }
+
+      /* Glassmorphism utilities */
+      .glass-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--card-border);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      
+      .glass-nav {
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .light-mode .glass-nav {
+         background: rgba(255, 255, 255, 0.7);
+         border: 1px solid rgba(255, 255, 255, 0.5);
+         box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+      }
+
+      /* Nebula Background for Home Page */
+      .nebula-bg {
+        background: radial-gradient(circle at 50% 0%, #2e3b55 0%, #0f172a 60%, #05080f 100%);
+      }
+      .light-mode .nebula-bg {
+         background: radial-gradient(circle at 50% 0%, #e0f2fe 0%, #f0f9ff 60%, #f8fafc 100%);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
+  }
+}
+</script>
+</head>
+  <body class="antialiased min-h-screen selection:bg-blue-500 selection:text-white overflow-hidden">
+    <div id="root" class="h-screen w-full"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
