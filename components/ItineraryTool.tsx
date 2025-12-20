@@ -543,14 +543,14 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
           </div>
       </div>
 
-      {/* 2.5 Secondary Toolbar */}
+      {/* 2.5 Secondary Toolbar - Reduced Size */}
       <div className="px-6 flex gap-3 mb-2">
          <button 
              onClick={handleOpenRouteNav}
-             className="flex-1 h-12 rounded-[20px] bg-[#38bdf8]/10 border border-[#38bdf8]/20 flex items-center justify-center gap-2 text-[#38bdf8] font-bold text-xs shadow-sm active:scale-95 transition-transform"
+             className="flex-1 h-10 rounded-xl bg-[#38bdf8]/10 border border-[#38bdf8]/20 flex items-center justify-center gap-2 text-[#38bdf8] font-bold text-xs shadow-sm active:scale-95 transition-transform"
          >
              <div className="bg-[#38bdf8] rounded-full p-1">
-                <NavigationArrowIcon className="w-3 h-3 text-white" />
+                <NavigationArrowIcon className="w-2.5 h-2.5 text-white" />
              </div>
              本日路線導航
          </button>
@@ -558,7 +558,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
          <button 
             onClick={() => canSort && setIsLocked(!isLocked)}
             disabled={!canSort}
-            className={`flex-1 h-12 rounded-[20px] border flex items-center justify-center gap-2 font-bold text-xs shadow-sm transition-all ${
+            className={`flex-1 h-10 rounded-xl border flex items-center justify-center gap-2 font-bold text-xs shadow-sm transition-all ${
                 !canSort 
                 ? 'bg-[#1e293b]/40 border-white/5 text-slate-500 cursor-not-allowed opacity-50'
                 : isLocked 
@@ -566,7 +566,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                     : 'bg-blue-500/20 border-blue-400/30 text-blue-300 active:scale-95'
             }`}
          >
-            {isLocked ? <LockClosedIcon className="w-4 h-4" /> : <LockOpenIcon className="w-4 h-4" />}
+            {isLocked ? <LockClosedIcon className="w-3.5 h-3.5" /> : <LockOpenIcon className="w-3.5 h-3.5" />}
             {isLocked ? '排序鎖定' : '排序解鎖'}
          </button>
       </div>

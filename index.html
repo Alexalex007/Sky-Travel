@@ -38,38 +38,18 @@
         scrollbar-width: none;
       }
       
-      /* Galaxy Header Effect */
+      /* Galaxy Header Effect - Removed Nebula, kept deep space */
       .galaxy-header {
         background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
         overflow: hidden;
         position: relative;
       }
       
-      /* Nebula Effect */
-      .galaxy-header::before {
-        content: "";
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle at center, rgba(139, 92, 246, 0.15) 0%, rgba(56, 189, 248, 0.05) 30%, transparent 70%);
-        animation: rotateNebula 60s linear infinite;
-        pointer-events: none;
-        z-index: 1;
-      }
+      /* Removed Nebula Effect ::before block */
 
-      @keyframes rotateNebula {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      
       /* Light Mode Sky Header */
       .light-mode .galaxy-header {
         background: linear-gradient(to bottom, #7dd3fc 0%, #bae6fd 100%);
-      }
-      .light-mode .galaxy-header::before {
-        display: none;
       }
 
       .stars {
@@ -79,23 +59,36 @@
         z-index: 0;
       }
       
-      /* Create stars using box-shadow - Increased density */
+      /* Create stars using box-shadow - High density */
       .stars::after {
         content: " ";
         position: absolute;
-        top: 10px; left: 10px;
+        top: 2px; left: 2px;
         width: 2px; height: 2px;
         background: transparent;
         box-shadow: 
+          /* Cluster 1 */
           5vw 10vh #fff, 15vw 5vh #fff, 25vw 20vh #fff, 35vw 15vh #fff, 
           45vw 25vh #fff, 55vw 5vh #fff, 65vw 30vh #fff, 75vw 10vh #fff,
           85vw 25vh #fff, 95vw 15vh #fff, 10vw 40vh #fff, 20vw 55vh #fff, 
           30vw 35vh #fff, 40vw 60vh #fff, 50vw 45vh #fff, 60vw 70vh #fff, 
           70vw 35vh #fff, 80vw 50vh #fff, 90vw 65vh #fff, 5vw 80vh #fff,
-          12vw 12vh #ccc, 32vw 42vh #ccc, 52vw 72vh #ccc, 72vw 22vh #ccc, 92vw 52vh #ccc;
+          /* Cluster 2 (Smaller/Dimmer) */
+          12vw 12vh 1px #ccc, 32vw 42vh 1px #ccc, 52vw 72vh 1px #ccc, 
+          72vw 22vh 1px #ccc, 92vw 52vh 1px #ccc, 18vw 88vh 1px #fff,
+          28vw 8vh 1px #fff, 38vw 98vh 1px #fff, 48vw 18vh 1px #fff,
+          58vw 88vh 1px #fff, 68vw 8vh 1px #fff, 78vw 98vh 1px #fff,
+          /* Cluster 3 (More Density) */
+          3vw 33vh #fff, 13vw 53vh #fff, 23vw 23vh #fff, 33vw 73vh #fff,
+          43vw 13vh #fff, 53vw 63vh #fff, 63vw 33vh #fff, 73vw 83vh #fff,
+          83vw 23vh #fff, 93vw 43vh #fff, 2vw 92vh #fff, 98vw 2vh #fff,
+          /* Cluster 4 */
+          7vw 57vh 0.5px #aaa, 27vw 27vh 0.5px #aaa, 47vw 97vh 0.5px #aaa,
+          67vw 67vh 0.5px #aaa, 87vw 37vh 0.5px #aaa, 17vw 17vh 0.5px #aaa,
+          37vw 57vh 0.5px #aaa, 57vw 87vh 0.5px #aaa, 77vw 27vh 0.5px #aaa;
         border-radius: 50%;
-        opacity: 0.8;
-        animation: twinkle 5s infinite alternate;
+        opacity: 0.9;
+        animation: twinkle 4s infinite alternate;
       }
       
       .light-mode .stars::after {
@@ -103,8 +96,8 @@
       }
 
       @keyframes twinkle {
-        0% { opacity: 0.4; transform: scale(0.8); }
-        100% { opacity: 1; transform: scale(1.2); }
+        0% { opacity: 0.5; transform: scale(0.9); }
+        100% { opacity: 1; transform: scale(1.1); }
       }
 
       /* Glassmorphism utilities */
