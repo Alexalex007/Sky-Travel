@@ -284,9 +284,6 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       let diffMs = endUTC - startUTC;
       
       if (diffMs < 0) {
-          // Assuming user might input wrong dates or overnight flight crossing midnight
-          // But strict date input suggests dates are explicit. If negative, it's invalid or previous day.
-          // Let's assume explicit dates.
       } else {
           const hours = Math.floor(diffMs / (1000 * 60 * 60));
           const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -495,31 +492,31 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   return (
     <div className="h-full flex flex-col relative bg-transparent">
       
-      {/* 1. Header (Reduced height h-28) */}
+      {/* 1. Header (Reduced height h-28) - Layout Optimization */}
       <div className="h-28 galaxy-header rounded-b-[40px] shadow-2xl shadow-blue-900/20 z-20 relative flex flex-col justify-center px-6 pt-2 flex-shrink-0">
           <div className="stars"></div>
-          <div className="relative z-10 flex justify-between items-center w-full mt-2">
-            <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-[20px] bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-                    <MapIcon className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                    <h1 className="text-3xl font-black text-white tracking-wide leading-none mb-1 drop-shadow-lg">{trip.destination.split(',')[0]}</h1>
-                    <div className="flex items-center gap-2">
-                        <span className="bg-white/20 text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider backdrop-blur-sm">{getDayNumber(selectedDate)}</span>
-                        <span className="text-blue-100 text-xs font-mono font-bold tracking-wide">{selectedDate}</span>
+          <div className="relative z-10 flex justify-between items-center w-full mt-1">
+            {/* Left: Info */}
+            <div className="flex flex-col gap-1.5 w-full">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+                        <MapIcon className="w-4 h-4 text-white" />
                     </div>
+                    <h1 className="text-3xl font-black text-white tracking-wide leading-none drop-shadow-lg truncate max-w-[200px]">{trip.destination.split(',')[0]}</h1>
+                </div>
+                <div className="flex items-center gap-2 pl-1">
+                    <span className="bg-white/20 text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider backdrop-blur-sm">{getDayNumber(selectedDate)}</span>
+                    <span className="text-blue-100 text-xs font-mono font-bold tracking-wide opacity-80">{selectedDate}</span>
                 </div>
             </div>
-            {/* Weather Widget Bigger */}
-            <div className="flex gap-3">
-                <button 
-                    onClick={handleWeatherSearch}
-                    className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-yellow-400/20 to-orange-500/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.2)] active:scale-95 transition-transform"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
-                </button>
-            </div>
+
+            {/* Right: Weather Widget */}
+            <button 
+                onClick={handleWeatherSearch}
+                className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-yellow-400/20 to-orange-500/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.2)] active:scale-95 transition-transform flex-shrink-0"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+            </button>
           </div>
       </div>
 
@@ -608,7 +605,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       {/* FAB - Fixed Position significantly lower */}
       <button 
         onClick={() => { setEditingActivityId(null); setModalMode('PLAN'); setShowAddModal(true); }}
-        className="fixed bottom-[92px] right-6 z-[60] w-16 h-16 bg-[#38bdf8] hover:bg-[#0ea5e9] rounded-full flex items-center justify-center text-white shadow-[0_0_30px_rgba(56,189,248,0.5)] active:scale-90 transition-all duration-300 border-4 border-[#05080F]"
+        className="fixed bottom-[130px] right-6 z-[60] w-16 h-16 bg-[#38bdf8] hover:bg-[#0ea5e9] rounded-full flex items-center justify-center text-white shadow-[0_0_30px_rgba(56,189,248,0.5)] active:scale-90 transition-all duration-300 border-4 border-[#05080F]"
       >
         <PlusIcon className="w-8 h-8 stroke-[2.5]" />
       </button>
@@ -658,6 +655,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                  <h3 className="text-xl font-bold text-white tracking-wide">{editingActivityId ? '編輯行程' : (modalMode === 'PLAN' ? '規劃行程' : '新增航班資訊')}</h3>
                  <button onClick={closeModal} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
              </div>
+             
              <div className="flex-grow overflow-y-auto no-scrollbar space-y-4 pb-4">
              {modalMode === 'PLAN' ? (
                  /* ... Existing Plan Form Code ... */
@@ -732,10 +730,26 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                  </div>
              )}
              </div>
-             {modalMode === 'PLAN' && !editingActivityId && (
-                 <div className="mt-2 grid grid-cols-2 gap-3 mb-4">
-                    <button onClick={() => setModalMode('PLAN')} className={`py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${modalMode === 'PLAN' ? 'bg-[#1f2937] text-white border border-white/10' : 'text-slate-500'}`}>行程規劃</button>
-                    <button onClick={() => setModalMode('FLIGHT')} className={`py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${modalMode === 'FLIGHT' ? 'bg-sky-500/20 text-sky-400 border border-sky-400/30' : 'text-slate-500'}`}><PlaneIcon className="w-4 h-4" />航班資訊</button>
+             {!editingActivityId && (
+                 <div className="mt-2 mb-4 relative p-1 rounded-2xl bg-[#1f2937]/50 border border-white/5 backdrop-blur-xl flex h-14 shadow-inner">
+                    <div 
+                        className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl shadow-[0_0_15px_rgba(56,189,248,0.3)] transition-all duration-300 ease-out z-0
+                        ${modalMode === 'PLAN' ? 'left-1 bg-gradient-to-tr from-[#38bdf8] to-blue-500' : 'left-[calc(50%+4px)] bg-gradient-to-tr from-sky-400 to-cyan-400'}
+                        `}
+                    ></div>
+                    <button 
+                        onClick={() => setModalMode('PLAN')}
+                        className={`flex-1 relative z-10 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${modalMode === 'PLAN' ? 'text-white' : 'text-slate-500'}`}
+                    >
+                        行程規劃
+                    </button>
+                    <button 
+                        onClick={() => setModalMode('FLIGHT')}
+                        className={`flex-1 relative z-10 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${modalMode === 'FLIGHT' ? 'text-white' : 'text-slate-500'}`}
+                    >
+                        <PlaneIcon className="w-4 h-4" />
+                        航班資訊
+                    </button>
                  </div>
              )}
              <div className="pt-2 flex gap-3 pb-safe">

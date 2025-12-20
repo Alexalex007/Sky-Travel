@@ -45,9 +45,31 @@
         position: relative;
       }
       
+      /* Nebula Effect */
+      .galaxy-header::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle at center, rgba(139, 92, 246, 0.15) 0%, rgba(56, 189, 248, 0.05) 30%, transparent 70%);
+        animation: rotateNebula 60s linear infinite;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      @keyframes rotateNebula {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
       /* Light Mode Sky Header */
       .light-mode .galaxy-header {
         background: linear-gradient(to bottom, #7dd3fc 0%, #bae6fd 100%);
+      }
+      .light-mode .galaxy-header::before {
+        display: none;
       }
 
       .stars {
@@ -57,39 +79,31 @@
         z-index: 0;
       }
       
-      /* Create stars using box-shadow */
+      /* Create stars using box-shadow - Increased density */
       .stars::after {
         content: " ";
         position: absolute;
-        top: 20px; left: 20px;
+        top: 10px; left: 10px;
         width: 2px; height: 2px;
         background: transparent;
         box-shadow: 
-          10vw 5vh #fff, 20vw 15vh #fff, 30vw 8vh #fff, 40vw 12vh #fff, 
-          50vw 4vh #fff, 60vw 18vh #fff, 70vw 9vh #fff, 80vw 14vh #fff,
-          90vw 6vh #fff, 15vw 22vh #fff, 35vw 28vh #fff, 55vw 24vh #fff;
+          5vw 10vh #fff, 15vw 5vh #fff, 25vw 20vh #fff, 35vw 15vh #fff, 
+          45vw 25vh #fff, 55vw 5vh #fff, 65vw 30vh #fff, 75vw 10vh #fff,
+          85vw 25vh #fff, 95vw 15vh #fff, 10vw 40vh #fff, 20vw 55vh #fff, 
+          30vw 35vh #fff, 40vw 60vh #fff, 50vw 45vh #fff, 60vw 70vh #fff, 
+          70vw 35vh #fff, 80vw 50vh #fff, 90vw 65vh #fff, 5vw 80vh #fff,
+          12vw 12vh #ccc, 32vw 42vh #ccc, 52vw 72vh #ccc, 72vw 22vh #ccc, 92vw 52vh #ccc;
         border-radius: 50%;
-        animation: twinkle 4s infinite alternate;
+        opacity: 0.8;
+        animation: twinkle 5s infinite alternate;
       }
       
       .light-mode .stars::after {
          display: none; /* No stars in day mode */
       }
-      
-      /* Clouds for Light Mode (Simplified with CSS gradient/shapes) */
-      .light-mode .galaxy-header::before {
-        content: '';
-        position: absolute;
-        top: -20px; right: -20px;
-        width: 200px; height: 200px;
-        background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
-        border-radius: 50%;
-        opacity: 0.6;
-        filter: blur(20px);
-      }
 
       @keyframes twinkle {
-        0% { opacity: 0.3; transform: scale(0.8); }
+        0% { opacity: 0.4; transform: scale(0.8); }
         100% { opacity: 1; transform: scale(1.2); }
       }
 
