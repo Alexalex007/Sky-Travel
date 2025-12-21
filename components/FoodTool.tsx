@@ -671,7 +671,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                                     className={`absolute top-1.5 bottom-1.5 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg border border-white/20 backdrop-blur-md
                                     ${budget.type === 'total' 
                                         ? 'left-1.5 w-[calc(50%-6px)] bg-gradient-to-br from-[#38bdf8]/60 to-[#0284c7]/60 shadow-blue-500/20' 
-                                        : 'left-[calc(50%+3px)] w-[calc(50%-4.5px)] bg-gradient-to-br from-[#38bdf8]/60 to-[#0284c7]/60 shadow-blue-500/20'}
+                                        : 'left-[50%] w-[calc(50%-6px)] bg-gradient-to-br from-[#38bdf8]/60 to-[#0284c7]/60 shadow-blue-500/20'}
                                     `}
                             ></div>
                             
@@ -766,8 +766,8 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                                     <div 
                                         className={`absolute top-1.5 bottom-1.5 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg border border-white/20 backdrop-blur-md
                                             ${newExpense.paymentMethod === 'cash' ? 'left-1.5 w-[calc(33.33%-4px)] bg-gradient-to-br from-[#34d399]/60 to-[#059669]/60 shadow-emerald-500/20' : 
-                                            newExpense.paymentMethod === 'card' ? 'left-[calc(33.33%+3px)] w-[calc(33.33%-4px)] bg-gradient-to-br from-[#38bdf8]/60 to-[#0284c7]/60 shadow-blue-500/20' : 
-                                            'left-[calc(66.66%+2px)] w-[calc(33.33%-4px)] bg-gradient-to-br from-[#94a3b8]/60 to-[#475569]/60 shadow-slate-500/20'}
+                                            newExpense.paymentMethod === 'card' ? 'left-[calc(33.33%+2px)] w-[calc(33.33%-4px)] bg-gradient-to-br from-[#38bdf8]/60 to-[#0284c7]/60 shadow-blue-500/20' : 
+                                            'left-[calc(66.66%-2px)] w-[calc(33.33%-4px)] bg-gradient-to-br from-[#94a3b8]/60 to-[#475569]/60 shadow-slate-500/20'}
                                         `}
                                     ></div>
 

@@ -116,7 +116,7 @@ const PackingTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
       {/* Tabs */}
       <div className="bg-slate-100 dark:bg-[#1f2937] p-1.5 rounded-[20px] flex mb-6 border border-slate-200 dark:border-white/5 relative z-10">
          <div 
-            className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white dark:bg-[#2d3748] rounded-2xl shadow-sm transition-all duration-300 ease-out border border-black/5 dark:border-white/5 ${tab === 'SHOPPING' ? 'left-1.5' : 'left-[calc(50%+4px)]'}`}
+            className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white dark:bg-[#2d3748] rounded-2xl shadow-sm transition-all duration-300 ease-out border border-black/5 dark:border-white/5 ${tab === 'SHOPPING' ? 'left-1.5' : 'left-[50%]'}`}
          ></div>
 
          <button 

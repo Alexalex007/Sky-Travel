@@ -735,7 +735,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                  <div className="mt-2 mb-4 relative p-1 rounded-2xl bg-slate-50 dark:bg-[#1f2937]/50 border border-slate-200 dark:border-white/5 backdrop-blur-xl flex h-14 shadow-inner">
                     <div 
                         className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl shadow-[0_0_15px_rgba(56,189,248,0.3)] transition-all duration-300 ease-out z-0
-                        ${modalMode === 'PLAN' ? 'left-1 bg-gradient-to-tr from-[#38bdf8] to-blue-500' : 'left-[calc(50%+4px)] bg-gradient-to-tr from-sky-400 to-cyan-400'}
+                        ${modalMode === 'PLAN' ? 'left-1 bg-gradient-to-tr from-[#38bdf8] to-blue-500' : 'left-[50%] bg-gradient-to-tr from-sky-400 to-cyan-400'}
                         `}
                     ></div>
                     <button 

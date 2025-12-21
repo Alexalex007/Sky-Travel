@@ -368,34 +368,21 @@ function App() {
   if (view === 'CREATE') {
     return (
       <div className="h-full flex flex-col p-6 bg-transparent transition-colors duration-300">
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-4">
             <button onClick={() => setView('HOME')} className="w-10 h-10 rounded-2xl flex items-center justify-center border shadow-sm transition-colors bg-white border-slate-200 text-slate-500 hover:bg-slate-50 dark:bg-[#1e293b] dark:border-white/5 dark:text-slate-400 dark:hover:bg-[#334155]">
               <ChevronLeftIcon className="w-5 h-5" />
             </button>
         </div>
         
         <h2 className="text-3xl font-black mb-1 text-slate-900 dark:text-white">建立新旅程</h2>
-        <p className="text-slate-500 text-sm font-bold mb-8">規劃您的下一場冒險</p>
+        <p className="text-slate-500 text-sm font-bold mb-6">規劃您的下一場冒險</p>
         
-        <form onSubmit={handleCreateTrip} className="flex-grow flex flex-col space-y-8 overflow-y-auto no-scrollbar pb-20">
-             <div className="space-y-3">
-                <label className="text-slate-500 text-xs font-bold ml-1">旅程名稱 (選填)</label>
-                <div className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-2xl p-4 flex items-center gap-3 shadow-lg">
-                    <span className="text-[#38bdf8]"><TagIcon className="w-5 h-5" /></span>
-                    <input 
-                        type="text" 
-                        className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg"
-                        placeholder="例如：2025 東京行"
-                        value={tripName}
-                        onChange={e => setTripName(e.target.value)}
-                    />
-                </div>
-             </div>
+        <form onSubmit={handleCreateTrip} className={`flex-grow flex flex-col ${tripType === 'Single' ? 'overflow-hidden space-y-5' : 'overflow-y-auto space-y-6'} no-scrollbar pb-6`}>
              
              {/* Toggle */}
              <div className="relative p-1 rounded-2xl bg-white border-slate-200 dark:bg-[#111827]/80 dark:border-white/10 border backdrop-blur-xl flex h-16 shadow-inner overflow-hidden flex-shrink-0">
                  <div 
-                    className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-slate-100 border-slate-200 dark:bg-[#1e293b] dark:border-white/10 border shadow-[0_0_15px_rgba(56,189,248,0.15)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0 ${tripType === 'Single' ? 'left-1' : 'left-[calc(50%+4px)]'}`}
+                    className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-slate-100 border-slate-200 dark:bg-[#1e293b] dark:border-white/10 border shadow-[0_0_15px_rgba(56,189,248,0.15)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0 ${tripType === 'Single' ? 'left-1' : 'left-[50%]'}`}
                  ></div>
                  <button 
                     type="button"
@@ -413,6 +400,20 @@ function App() {
                  </button>
              </div>
 
+             <div className="space-y-2">
+                <label className="text-slate-500 text-xs font-bold ml-1">旅程名稱 (選填)</label>
+                <div className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-2xl p-4 flex items-center gap-3 shadow-lg">
+                    <span className="text-[#38bdf8]"><TagIcon className="w-5 h-5" /></span>
+                    <input 
+                        type="text" 
+                        className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg"
+                        placeholder="例如：2025 東京行"
+                        value={tripName}
+                        onChange={e => setTripName(e.target.value)}
+                    />
+                </div>
+             </div>
+
              {/* Single Destination Input */}
              {tripType === 'Single' && (
                  <div className="space-y-3 animate-fade-in-up">
@@ -427,12 +428,18 @@ function App() {
                             onChange={e => setSingleDestination(e.target.value)}
                         />
                      </div>
-                     <div className="grid grid-cols-2 gap-4 mt-4">
-                        <div className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-2xl p-4 shadow-lg">
-                             <input type="date" className="bg-transparent w-full text-slate-900 dark:text-white font-bold" value={singleStartDate} onChange={e => setSingleStartDate(e.target.value)} />
+                     <div className="grid grid-cols-2 gap-4 mt-2">
+                        <div>
+                            <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">抵達日期</label>
+                            <div className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-2xl p-4 shadow-lg">
+                                <input type="date" className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none" value={singleStartDate} onChange={e => setSingleStartDate(e.target.value)} />
+                            </div>
                         </div>
-                        <div className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-2xl p-4 shadow-lg">
-                             <input type="date" className="bg-transparent w-full text-slate-900 dark:text-white font-bold" value={singleEndDate} onChange={e => setSingleEndDate(e.target.value)} />
+                        <div>
+                            <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">離開日期</label>
+                            <div className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-2xl p-4 shadow-lg">
+                                <input type="date" className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none" value={singleEndDate} onChange={e => setSingleEndDate(e.target.value)} />
+                            </div>
                         </div>
                      </div>
                  </div>
@@ -454,8 +461,14 @@ function App() {
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                <input type="date" className="bg-slate-100 dark:bg-[#1f2937] rounded-xl p-3 text-sm text-slate-900 dark:text-white font-bold" value={stop.startDate} onChange={e => handleStopChange(stop.id, 'startDate', e.target.value)} />
-                                <input type="date" className="bg-slate-100 dark:bg-[#1f2937] rounded-xl p-3 text-sm text-slate-900 dark:text-white font-bold" value={stop.endDate} onChange={e => handleStopChange(stop.id, 'endDate', e.target.value)} />
+                                <div>
+                                    <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">抵達日期</label>
+                                    <input type="date" className="w-full bg-slate-100 dark:bg-[#1f2937] rounded-xl p-3 text-sm text-slate-900 dark:text-white font-bold focus:outline-none" value={stop.startDate} onChange={e => handleStopChange(stop.id, 'startDate', e.target.value)} />
+                                </div>
+                                <div>
+                                    <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">離開日期</label>
+                                    <input type="date" className="w-full bg-slate-100 dark:bg-[#1f2937] rounded-xl p-3 text-sm text-slate-900 dark:text-white font-bold focus:outline-none" value={stop.endDate} onChange={e => handleStopChange(stop.id, 'endDate', e.target.value)} />
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -465,7 +478,7 @@ function App() {
 
             <button 
                 type="submit"
-                className="w-full py-5 bg-[#334155] text-white font-black text-lg rounded-3xl hover:bg-[#38bdf8] shadow-lg transition-colors flex items-center justify-center gap-2 mt-auto"
+                className="w-full py-5 bg-[#334155] text-white font-black text-lg rounded-3xl hover:bg-[#38bdf8] shadow-lg transition-colors flex items-center justify-center gap-2 mt-auto flex-shrink-0"
             >
                 <ChevronRightIcon className="w-5 h-5" />
                 開始規劃
