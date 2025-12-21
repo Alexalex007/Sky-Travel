@@ -278,7 +278,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
       return (
         <div className="h-full flex flex-col relative bg-transparent animate-fade-in">
             {/* Header */}
-            <div className="px-6 pt-8 pb-4 flex items-center gap-4 bg-white/30 dark:bg-[#1e293b]/30 backdrop-blur-md sticky top-0 z-10 transition-colors duration-300">
+            <div className="px-6 pt-6 pb-3 flex items-center gap-4 bg-white/30 dark:bg-[#1e293b]/30 backdrop-blur-md sticky top-0 z-10 transition-colors duration-300">
                 <button 
                     onClick={() => setCurrentView('DASHBOARD')}
                     className="w-10 h-10 rounded-2xl flex items-center justify-center border shadow-sm transition-colors bg-white border-slate-200 text-slate-500 hover:bg-slate-50 dark:bg-[#1e293b] dark:border-white/5 dark:text-slate-400 dark:hover:bg-[#334155]"
@@ -345,10 +345,10 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
       
       {currentView === 'DASHBOARD' ? (
         <>
-            {/* 1. Header: Total Expenses - FIXED & REDESIGNED */}
-            <div className="px-6 pt-8 pb-4 sticky top-0 z-30 pointer-events-none">
+            {/* 1. Header: Total Expenses - FIXED & REDESIGNED (Compact Version) */}
+            <div className="px-6 pt-6 pb-2 sticky top-0 z-30 pointer-events-none">
                 {/* The card itself needs pointer-events-auto to be clickable/interactive */}
-                <div className="pointer-events-auto relative overflow-hidden rounded-[32px] p-6 shadow-xl shadow-blue-500/20 transition-all duration-300
+                <div className="pointer-events-auto relative overflow-hidden rounded-[32px] p-5 shadow-xl shadow-blue-500/20 transition-all duration-300
                     bg-gradient-to-br from-[#38bdf8] to-[#0284c7]
                     dark:from-[#0f172a] dark:to-[#1e293b] dark:border dark:border-white/10"
                 >
@@ -356,9 +356,9 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                      <div className="absolute -right-4 -top-12 h-40 w-40 rounded-full bg-white/10 blur-3xl pointer-events-none"></div>
                      <div className="absolute -left-4 -bottom-12 h-40 w-40 rounded-full bg-black/5 dark:bg-blue-500/10 blur-3xl pointer-events-none"></div>
 
-                     <div className="relative z-10 flex flex-col gap-1">
+                     <div className="relative z-10 flex flex-col gap-0.5">
                          <div className="flex justify-between items-start">
-                            <span className="text-blue-50 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">總開支 TOTAL</span>
+                            <span className="text-blue-50 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">總開支 TOTAL</span>
                             
                             {/* Modern Currency Switcher */}
                             <div className="relative">
@@ -370,13 +370,13 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                                     {ALL_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} {c.name}</option>)}
                                 </select>
                                 <div className="flex items-center gap-1.5 bg-white/20 dark:bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30 dark:border-white/10 transition-colors hover:bg-white/30">
-                                    <span className="font-bold text-sm tracking-wide text-white">{globalCurrency}</span>
+                                    <span className="font-bold text-xs tracking-wide text-white">{globalCurrency}</span>
                                     <ChevronDownIcon className="w-3 h-3 text-white/80" />
                                 </div>
                             </div>
                          </div>
                          
-                         <h1 className="text-4xl font-black tracking-tight text-white drop-shadow-sm mt-2">
+                         <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-sm mt-1">
                             {Math.round(displayedTotalExpenses).toLocaleString()}
                          </h1>
                      </div>
@@ -626,203 +626,204 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                     )}
                 </div>
             </div>
+
+            {/* --- MODALS --- */}
+
+            {/* 1. Set Budget Modal */}
+            {activeModal === 'BUDGET' && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                    {/* ... (Modal content same as before) ... */}
+                    <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl animate-slide-up">
+                        <h3 className="text-xl font-bold text-slate-800 dark:text-white text-center mb-8">設定旅途預算</h3>
+                        
+                        {/* Amount & Currency Split Block */}
+                        <div className="flex gap-3 mb-8">
+                            <div className="flex-1 bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex flex-col justify-center h-20 relative">
+                                <span className="text-[10px] font-bold text-slate-400 absolute top-2 left-4">金額</span>
+                                <input 
+                                    type="number" 
+                                    value={budget.amount}
+                                    onChange={e => setBudget({...budget, amount: parseFloat(e.target.value) || 0})}
+                                    className="w-full bg-transparent text-slate-900 dark:text-white font-black text-2xl text-center focus:outline-none placeholder-slate-400"
+                                    placeholder="0"
+                                />
+                            </div>
+                            <div className="w-32 bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl h-20 relative flex items-center justify-center">
+                                <select 
+                                    value={budget.currency}
+                                    onChange={e => setBudget({...budget, currency: e.target.value})}
+                                    className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                                >
+                                    {ALL_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                                </select>
+                                <div className="flex items-center gap-1.5 pointer-events-none">
+                                    <span className="text-slate-900 dark:text-white font-bold text-lg">{budget.currency}</span>
+                                    <ChevronDownIcon className="w-4 h-4 text-slate-400" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <p className="text-slate-500 text-xs font-bold text-center mb-2">預算類型</p>
+                        
+                        {/* Premium Glass Sliding Budget Type Toggle - Desaturated Glass */}
+                        <div className="bg-slate-100/50 dark:bg-white/5 p-1.5 rounded-2xl flex relative mb-8 h-14 items-center backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-inner">
+                            <div 
+                                    className={`absolute top-1.5 bottom-1.5 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg border border-white/20 backdrop-blur-md
+                                    ${budget.type === 'total' 
+                                        ? 'left-1.5 w-[calc(50%-6px)] bg-gradient-to-br from-[#38bdf8]/60 to-[#0284c7]/60 shadow-blue-500/20' 
+                                        : 'left-[calc(50%+3px)] w-[calc(50%-4.5px)] bg-gradient-to-br from-[#38bdf8]/60 to-[#0284c7]/60 shadow-blue-500/20'}
+                                    `}
+                            ></div>
+                            
+                            <button 
+                                onClick={() => setBudget({...budget, type: 'total'})}
+                                className={`flex-1 relative z-10 text-xs font-bold transition-colors duration-300 ${budget.type === 'total' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                            >
+                                總預算 (現金+卡)
+                            </button>
+                            <button 
+                                onClick={() => setBudget({...budget, type: 'cash_only'})}
+                                className={`flex-1 relative z-10 text-xs font-bold transition-colors duration-300 ${budget.type === 'cash_only' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                            >
+                                僅限現金
+                            </button>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button onClick={() => setActiveModal('NONE')} className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-[#1e293b] text-slate-500 dark:text-slate-400 font-bold border border-slate-200 dark:border-white/5">取消</button>
+                            <button onClick={() => setActiveModal('NONE')} className="flex-1 py-4 rounded-2xl bg-[#38bdf8] text-white font-bold shadow-lg shadow-blue-500/30 hover:bg-[#0ea5e9]">確認</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 2. Add Expense Modal (Pre & On-Trip) */}
+            {(activeModal === 'ADD_PRE' || activeModal === 'ADD_ON') && (
+                <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm sm:p-4 animate-fade-in">
+                    {/* ... (Modal content same as before) ... */}
+                    <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] border-t sm:border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col animate-slide-up max-h-[90vh]">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">
+                                {activeModal === 'ADD_PRE' ? '新增行前開支' : '新增旅途開支'}
+                            </h3>
+                            <button onClick={() => setActiveModal('NONE')} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        <div className="flex-grow overflow-y-auto no-scrollbar space-y-6 pb-6">
+                            {/* Amount & Currency Split Block */}
+                            <div>
+                                <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">金額與幣種</label>
+                                <div className="flex gap-3">
+                                    <div className="flex-1 bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex flex-col justify-center h-24 relative">
+                                        <input 
+                                            type="number" 
+                                            placeholder="0" 
+                                            autoFocus
+                                            value={newExpense.amount}
+                                            onChange={e => setNewExpense({...newExpense, amount: e.target.value})}
+                                            className="w-full bg-transparent text-slate-900 dark:text-white font-black text-3xl text-left pl-2 focus:outline-none placeholder-slate-400 dark:placeholder-slate-700"
+                                        />
+                                    </div>
+                                    <div className="w-36 bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl h-24 relative flex items-center justify-center">
+                                        <select 
+                                            value={newExpense.currency}
+                                            onChange={e => setNewExpense({...newExpense, currency: e.target.value})}
+                                            className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                                        >
+                                            {ALL_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                                        </select>
+                                        <div className="flex flex-col items-center gap-1 pointer-events-none">
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-slate-900 dark:text-white font-bold text-lg">{newExpense.currency}</span>
+                                                <ChevronDownIcon className="w-4 h-4 text-slate-400" />
+                                            </div>
+                                            <span className="text-xs font-bold text-slate-500">{getCurrencyLabel(newExpense.currency)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Name */}
+                            <div>
+                                <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">項目名稱</label>
+                                <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
+                                    <input 
+                                        type="text" 
+                                        placeholder="例如：機票、晚餐、紀念品..." 
+                                        value={newExpense.title}
+                                        onChange={e => setNewExpense({...newExpense, title: e.target.value})}
+                                        className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg" 
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Premium Glass Sliding Payment Method Toggle - Desaturated Glass */}
+                            <div>
+                                <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">付款方式</label>
+                                <div className="bg-slate-100/50 dark:bg-white/5 p-1.5 rounded-2xl flex relative h-14 items-center backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-inner">
+                                    <div 
+                                        className={`absolute top-1.5 bottom-1.5 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg border border-white/20 backdrop-blur-md
+                                            ${newExpense.paymentMethod === 'cash' ? 'left-1.5 w-[calc(33.33%-4px)] bg-gradient-to-br from-[#34d399]/60 to-[#059669]/60 shadow-emerald-500/20' : 
+                                            newExpense.paymentMethod === 'card' ? 'left-[calc(33.33%+3px)] w-[calc(33.33%-4px)] bg-gradient-to-br from-[#38bdf8]/60 to-[#0284c7]/60 shadow-blue-500/20' : 
+                                            'left-[calc(66.66%+2px)] w-[calc(33.33%-4px)] bg-gradient-to-br from-[#94a3b8]/60 to-[#475569]/60 shadow-slate-500/20'}
+                                        `}
+                                    ></div>
+
+                                    <button 
+                                        onClick={() => setNewExpense({...newExpense, paymentMethod: 'cash'})}
+                                        className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors duration-300 ${newExpense.paymentMethod === 'cash' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                                    >
+                                        <BanknotesIcon className="w-4 h-4" /> 現金
+                                    </button>
+                                    <button 
+                                        onClick={() => setNewExpense({...newExpense, paymentMethod: 'card'})}
+                                        className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors duration-300 ${newExpense.paymentMethod === 'card' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                                    >
+                                        <CreditCardIcon className="w-4 h-4" /> 信用卡
+                                    </button>
+                                    <button 
+                                        onClick={() => setNewExpense({...newExpense, paymentMethod: 'other'})}
+                                        className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors duration-300 ${newExpense.paymentMethod === 'other' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                                    >
+                                        ... 其他
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Categories */}
+                            <div>
+                                <label className="text-slate-500 text-[10px] font-bold mb-2 block ml-1">分類</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {(activeModal === 'ADD_PRE' ? PRE_TRIP_CATEGORIES : ON_TRIP_CATEGORIES).map(cat => (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => setNewExpense({...newExpense, category: cat.id})}
+                                            className={`flex items-center gap-3 p-4 rounded-2xl transition-all border ${newExpense.category === cat.id ? 'bg-white dark:bg-[#1e293b] border-[#38bdf8] shadow-[0_0_15px_rgba(56,189,248,0.1)]' : 'bg-slate-50 dark:bg-[#1e293b]/50 border-transparent opacity-60 hover:opacity-100'}`}
+                                        >
+                                            <div className={`w-3 h-3 rounded-full ${cat.bg}`} style={{ backgroundColor: cat.color }}></div>
+                                            <span className={`text-sm font-bold ${newExpense.category === cat.id ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>{cat.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={() => handleSaveExpense(activeModal === 'ADD_PRE')}
+                            disabled={!newExpense.amount || !newExpense.title || !newExpense.category}
+                            className={`w-full py-4 rounded-3xl font-bold text-lg shadow-lg mt-auto transition-all ${(!newExpense.amount || !newExpense.title || !newExpense.category) ? 'bg-slate-200 dark:bg-[#1f2937] text-slate-500 cursor-not-allowed' : 'bg-[#38bdf8] text-white hover:bg-[#0ea5e9] shadow-blue-500/30'}`}
+                        >
+                            確認新增
+                        </button>
+                    </div>
+                </div>
+            )}
         </>
       ) : (
         renderListView(currentView)
       )}
-
-      {/* --- MODALS --- */}
-
-      {/* 1. Set Budget Modal */}
-      {activeModal === 'BUDGET' && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-           <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl animate-slide-up">
-               <h3 className="text-xl font-bold text-slate-800 dark:text-white text-center mb-8">設定旅途預算</h3>
-               
-               {/* Amount & Currency Split Block */}
-               <div className="flex gap-3 mb-8">
-                   <div className="flex-1 bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex flex-col justify-center h-20 relative">
-                       <span className="text-[10px] font-bold text-slate-400 absolute top-2 left-4">金額</span>
-                       <input 
-                          type="number" 
-                          value={budget.amount}
-                          onChange={e => setBudget({...budget, amount: parseFloat(e.target.value) || 0})}
-                          className="w-full bg-transparent text-slate-900 dark:text-white font-black text-2xl text-center focus:outline-none placeholder-slate-400"
-                          placeholder="0"
-                       />
-                   </div>
-                   <div className="w-32 bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl h-20 relative flex items-center justify-center">
-                       <select 
-                          value={budget.currency}
-                          onChange={e => setBudget({...budget, currency: e.target.value})}
-                          className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
-                       >
-                           {ALL_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
-                       </select>
-                       <div className="flex items-center gap-1.5 pointer-events-none">
-                           <span className="text-slate-900 dark:text-white font-bold text-lg">{budget.currency}</span>
-                           <ChevronDownIcon className="w-4 h-4 text-slate-400" />
-                       </div>
-                   </div>
-               </div>
-
-               <p className="text-slate-500 text-xs font-bold text-center mb-2">預算類型</p>
-               
-               {/* Premium Glass Sliding Budget Type Toggle - Desaturated Glass */}
-               <div className="bg-slate-100/50 dark:bg-white/5 p-1.5 rounded-2xl flex relative mb-8 h-14 items-center backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-inner">
-                   <div 
-                        className={`absolute top-1.5 bottom-1.5 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg border border-white/20 backdrop-blur-md
-                        ${budget.type === 'total' 
-                            ? 'left-1.5 w-[calc(50%-6px)] bg-gradient-to-br from-[#38bdf8]/60 to-[#0284c7]/60 shadow-blue-500/20' 
-                            : 'left-[calc(50%+3px)] w-[calc(50%-4.5px)] bg-gradient-to-br from-[#38bdf8]/60 to-[#0284c7]/60 shadow-blue-500/20'}
-                        `}
-                   ></div>
-                   
-                   <button 
-                      onClick={() => setBudget({...budget, type: 'total'})}
-                      className={`flex-1 relative z-10 text-xs font-bold transition-colors duration-300 ${budget.type === 'total' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
-                   >
-                       總預算 (現金+卡)
-                   </button>
-                   <button 
-                      onClick={() => setBudget({...budget, type: 'cash_only'})}
-                      className={`flex-1 relative z-10 text-xs font-bold transition-colors duration-300 ${budget.type === 'cash_only' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
-                   >
-                       僅限現金
-                   </button>
-               </div>
-
-               <div className="flex gap-3">
-                   <button onClick={() => setActiveModal('NONE')} className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-[#1e293b] text-slate-500 dark:text-slate-400 font-bold border border-slate-200 dark:border-white/5">取消</button>
-                   <button onClick={() => setActiveModal('NONE')} className="flex-1 py-4 rounded-2xl bg-[#38bdf8] text-white font-bold shadow-lg shadow-blue-500/30 hover:bg-[#0ea5e9]">確認</button>
-               </div>
-           </div>
-        </div>
-      )}
-
-      {/* 2. Add Expense Modal (Pre & On-Trip) */}
-      {(activeModal === 'ADD_PRE' || activeModal === 'ADD_ON') && (
-         <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm sm:p-4 animate-fade-in">
-             <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] border-t sm:border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col animate-slide-up max-h-[90vh]">
-                 <div className="flex justify-between items-center mb-6">
-                     <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">
-                         {activeModal === 'ADD_PRE' ? '新增行前開支' : '新增旅途開支'}
-                     </h3>
-                     <button onClick={() => setActiveModal('NONE')} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                     </button>
-                 </div>
-
-                 <div className="flex-grow overflow-y-auto no-scrollbar space-y-6 pb-6">
-                     {/* Amount & Currency Split Block */}
-                     <div>
-                         <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">金額與幣種</label>
-                         <div className="flex gap-3">
-                             <div className="flex-1 bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex flex-col justify-center h-24 relative">
-                                 <input 
-                                    type="number" 
-                                    placeholder="0" 
-                                    autoFocus
-                                    value={newExpense.amount}
-                                    onChange={e => setNewExpense({...newExpense, amount: e.target.value})}
-                                    className="w-full bg-transparent text-slate-900 dark:text-white font-black text-3xl text-left pl-2 focus:outline-none placeholder-slate-400 dark:placeholder-slate-700"
-                                 />
-                             </div>
-                             <div className="w-36 bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl h-24 relative flex items-center justify-center">
-                                 <select 
-                                    value={newExpense.currency}
-                                    onChange={e => setNewExpense({...newExpense, currency: e.target.value})}
-                                    className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
-                                 >
-                                     {ALL_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
-                                 </select>
-                                 <div className="flex flex-col items-center gap-1 pointer-events-none">
-                                     <div className="flex items-center gap-1">
-                                        <span className="text-slate-900 dark:text-white font-bold text-lg">{newExpense.currency}</span>
-                                        <ChevronDownIcon className="w-4 h-4 text-slate-400" />
-                                     </div>
-                                     <span className="text-xs font-bold text-slate-500">{getCurrencyLabel(newExpense.currency)}</span>
-                                 </div>
-                             </div>
-                         </div>
-                     </div>
-
-                     {/* Name */}
-                     <div>
-                         <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">項目名稱</label>
-                         <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
-                             <input 
-                                type="text" 
-                                placeholder="例如：機票、晚餐、紀念品..." 
-                                value={newExpense.title}
-                                onChange={e => setNewExpense({...newExpense, title: e.target.value})}
-                                className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg" 
-                             />
-                         </div>
-                     </div>
-
-                     {/* Premium Glass Sliding Payment Method Toggle - Desaturated Glass */}
-                     <div>
-                         <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">付款方式</label>
-                         <div className="bg-slate-100/50 dark:bg-white/5 p-1.5 rounded-2xl flex relative h-14 items-center backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-inner">
-                             <div 
-                                className={`absolute top-1.5 bottom-1.5 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg border border-white/20 backdrop-blur-md
-                                    ${newExpense.paymentMethod === 'cash' ? 'left-1.5 w-[calc(33.33%-4px)] bg-gradient-to-br from-[#34d399]/60 to-[#059669]/60 shadow-emerald-500/20' : 
-                                      newExpense.paymentMethod === 'card' ? 'left-[calc(33.33%+3px)] w-[calc(33.33%-4px)] bg-gradient-to-br from-[#38bdf8]/60 to-[#0284c7]/60 shadow-blue-500/20' : 
-                                      'left-[calc(66.66%+2px)] w-[calc(33.33%-4px)] bg-gradient-to-br from-[#94a3b8]/60 to-[#475569]/60 shadow-slate-500/20'}
-                                `}
-                             ></div>
-
-                             <button 
-                                onClick={() => setNewExpense({...newExpense, paymentMethod: 'cash'})}
-                                className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors duration-300 ${newExpense.paymentMethod === 'cash' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
-                             >
-                                 <BanknotesIcon className="w-4 h-4" /> 現金
-                             </button>
-                             <button 
-                                onClick={() => setNewExpense({...newExpense, paymentMethod: 'card'})}
-                                className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors duration-300 ${newExpense.paymentMethod === 'card' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
-                             >
-                                 <CreditCardIcon className="w-4 h-4" /> 信用卡
-                             </button>
-                             <button 
-                                onClick={() => setNewExpense({...newExpense, paymentMethod: 'other'})}
-                                className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors duration-300 ${newExpense.paymentMethod === 'other' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
-                             >
-                                 ... 其他
-                             </button>
-                         </div>
-                     </div>
-
-                     {/* Categories */}
-                     <div>
-                         <label className="text-slate-500 text-[10px] font-bold mb-2 block ml-1">分類</label>
-                         <div className="grid grid-cols-2 gap-3">
-                             {(activeModal === 'ADD_PRE' ? PRE_TRIP_CATEGORIES : ON_TRIP_CATEGORIES).map(cat => (
-                                 <button
-                                     key={cat.id}
-                                     onClick={() => setNewExpense({...newExpense, category: cat.id})}
-                                     className={`flex items-center gap-3 p-4 rounded-2xl transition-all border ${newExpense.category === cat.id ? 'bg-white dark:bg-[#1e293b] border-[#38bdf8] shadow-[0_0_15px_rgba(56,189,248,0.1)]' : 'bg-slate-50 dark:bg-[#1e293b]/50 border-transparent opacity-60 hover:opacity-100'}`}
-                                 >
-                                     <div className={`w-3 h-3 rounded-full ${cat.bg}`} style={{ backgroundColor: cat.color }}></div>
-                                     <span className={`text-sm font-bold ${newExpense.category === cat.id ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>{cat.label}</span>
-                                 </button>
-                             ))}
-                         </div>
-                     </div>
-                 </div>
-
-                 <button 
-                    onClick={() => handleSaveExpense(activeModal === 'ADD_PRE')}
-                    disabled={!newExpense.amount || !newExpense.title || !newExpense.category}
-                    className={`w-full py-4 rounded-3xl font-bold text-lg shadow-lg mt-auto transition-all ${(!newExpense.amount || !newExpense.title || !newExpense.category) ? 'bg-slate-200 dark:bg-[#1f2937] text-slate-500 cursor-not-allowed' : 'bg-[#38bdf8] text-white hover:bg-[#0ea5e9] shadow-blue-500/30'}`}
-                 >
-                     確認新增
-                 </button>
-             </div>
-         </div>
-      )}
-
     </div>
   );
 };
