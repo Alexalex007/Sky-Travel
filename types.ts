@@ -7,6 +7,14 @@ export interface Budget {
   type: 'total' | 'cash_only'; // 'total' = Cash + Card, 'cash_only' = Cash only
 }
 
+export interface DocumentItem {
+  id: string;
+  title: string;
+  type: 'link' | 'note' | 'file';
+  content: string;
+  createdAt: string;
+}
+
 export interface Trip {
   id: string;
   name: string;
@@ -17,7 +25,8 @@ export interface Trip {
   activities: Record<string, Activity[]>; // Date string key -> Activities
   expenses: Expense[];
   packingList: PackingItem[];
-  budget?: Budget; // Optional for backward compatibility, but we will init it
+  budget?: Budget;
+  documents?: DocumentItem[]; // New field for Toolbox documents
 }
 
 export interface FlightInfo {

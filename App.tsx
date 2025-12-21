@@ -5,7 +5,7 @@ import ItineraryTool from './components/ItineraryTool';
 import PackingTool from './components/PackingTool';
 import ExpensesTool from './components/FoodTool';
 import ToolboxTool from './components/PhraseTool';
-import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, InfoIcon, ArchiveIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, ArrowLongRightIcon } from './components/Icons';
+import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, GlobeIcon, SparklesIcon } from './components/Icons';
 
 function App() {
   const [view, setView] = useState<'HOME' | 'CREATE' | 'TRIP'>('HOME');
@@ -159,7 +159,8 @@ function App() {
       type: tripType,
       activities: {},
       expenses: [],
-      packingList: []
+      packingList: [],
+      documents: []
     };
     setTripData(newTrip);
     setView('TRIP');
@@ -396,7 +397,7 @@ function App() {
                     onClick={() => setTripType('Multi')}
                     className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors duration-300 ${tripType === 'Multi' ? 'text-[#a78bfa]' : 'text-slate-500'}`}
                  >
-                    <GridIcon className="w-5 h-5" /> 多城市漫遊
+                    <GlobeIcon className="w-5 h-5" /> 多城市漫遊
                  </button>
              </div>
 
@@ -507,7 +508,9 @@ function App() {
         {activeTab === Tab.EXPENSES && tripData && (
           <ExpensesTool trip={tripData} onUpdateTrip={setTripData} />
         )}
-        {activeTab === Tab.TOOLBOX && <ToolboxTool />}
+        {activeTab === Tab.TOOLBOX && tripData && (
+          <ToolboxTool trip={tripData} onUpdateTrip={setTripData} />
+        )}
         {activeTab === Tab.SETTINGS && <SettingsView />}
       </div>
 
@@ -544,7 +547,7 @@ function App() {
         </div>
         <div className="flex-1 flex justify-center z-10">
           <NavIcon 
-            icon={<GridIcon className="w-6 h-6" />} 
+            icon={<SparklesIcon className="w-6 h-6" />} 
             active={activeTab === Tab.TOOLBOX} 
             onClick={() => setActiveTab(Tab.TOOLBOX)} 
           />
