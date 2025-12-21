@@ -1,6 +1,12 @@
 
 export type TripType = 'Single' | 'Multi';
 
+export interface Budget {
+  amount: number;
+  currency: string; // e.g., 'HKD', 'JPY'
+  type: 'total' | 'cash_only'; // 'total' = Cash + Card, 'cash_only' = Cash only
+}
+
 export interface Trip {
   id: string;
   name: string;
@@ -11,6 +17,7 @@ export interface Trip {
   activities: Record<string, Activity[]>; // Date string key -> Activities
   expenses: Expense[];
   packingList: PackingItem[];
+  budget?: Budget; // Optional for backward compatibility, but we will init it
 }
 
 export interface FlightInfo {
@@ -43,8 +50,11 @@ export interface Expense {
   id: string;
   title: string;
   amount: number;
+  currency: string; // The currency this expense was paid in
   category: string;
   date: string;
+  isPreTrip: boolean; // true = Pre-trip, false = On-trip
+  paymentMethod: 'cash' | 'card' | 'other';
 }
 
 export interface PackingItem {

@@ -3,6 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { Trip, Activity, FlightInfo } from '../types';
 import { PlusIcon, CoffeeIcon, CameraIcon, DiningIcon, BusIcon, TagIcon, MapIcon, PlaneIcon, ArrowLongRightIcon, ClockIcon, HourglassIcon, LockClosedIcon, LockOpenIcon, TrashIcon, ChevronRightIcon, NavigationArrowIcon, ChevronUpIcon, ChevronDownIcon } from './Icons';
 
+interface Props {
+  trip: Trip;
+  onUpdateTrip: (trip: Trip) => void;
+  isDarkMode: boolean;
+  toggleTheme: () => void;
+}
+
+const timezones = Array.from({ length: 27 }, (_, i) => {
+    const offset = i - 12; // -12 to +14
+    const sign = offset >= 0 ? '+' : '-';
+    const absOffset = Math.abs(offset);
+    const label = `GMT${sign}${absOffset.toString().padStart(2, '0')}:00`;
+    return { value: offset, label };
+});
+
 // Helper for type colors
 const getTypeColor = (type: string) => {
     switch(type) {
@@ -41,23 +56,22 @@ const FlightCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: str
               
               {/* Centered Dot */}
               <div 
-                  className="absolute left-[19px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full z-20 shadow-[0_0_10px_rgba(0,0,0,0.5)] box-content"
+                  className="absolute left-[19px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full z-20 shadow-[0_0_10px_rgba(0,0,0,0.5)] box-content dark:bg-[#05080F] bg-white border-[3px]"
                   style={{ 
-                      backgroundColor: '#05080F', 
-                      border: `3px solid ${typeColor.hex}` 
+                      borderColor: typeColor.hex
                   }}
               ></div>
               
-              {/* Dark Card Design matching image */}
-              <div className="bg-[#0f172a] rounded-[24px] overflow-hidden shadow-2xl shadow-blue-900/10 relative active:scale-95 transition-transform duration-200 border border-slate-800">
+              {/* Card */}
+              <div className="bg-white dark:bg-[#0f172a] rounded-[24px] overflow-hidden shadow-xl dark:shadow-blue-900/10 relative active:scale-95 transition-transform duration-200 border border-slate-200 dark:border-slate-800">
                   
                   {/* Top Row: Flight Code, Plane Type, Icon */}
                   <div className="px-5 pt-4 pb-1 flex justify-between items-start">
                       <div className="flex gap-2">
-                          <span className="bg-[#1e293b] text-[#38bdf8] text-sm font-black px-2 py-1 rounded-md tracking-wider">{info.flightNumber}</span>
-                          {info.planeType && <span className="bg-[#1e293b] text-slate-400 text-xs font-bold px-2 py-1 rounded-md">{info.planeType}</span>}
+                          <span className="bg-slate-100 dark:bg-[#1e293b] text-[#38bdf8] text-sm font-black px-2 py-1 rounded-md tracking-wider">{info.flightNumber}</span>
+                          {info.planeType && <span className="bg-slate-100 dark:bg-[#1e293b] text-slate-500 dark:text-slate-400 text-xs font-bold px-2 py-1 rounded-md">{info.planeType}</span>}
                       </div>
-                      <div className="w-10 h-10 rounded-full bg-[#1e293b] flex items-center justify-center text-[#38bdf8]">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#1e293b] flex items-center justify-center text-[#38bdf8]">
                           <PlaneIcon className="w-5 h-5 transform -rotate-45" />
                       </div>
                   </div>
@@ -65,7 +79,7 @@ const FlightCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: str
                   {/* Middle Row: Codes and Gradient Arrow */}
                   <div className="px-5 py-1 flex justify-between items-center relative z-10">
                       <div>
-                          <div className="text-4xl font-black text-white tracking-wide">{info.departureCode}</div>
+                          <div className="text-4xl font-black text-slate-900 dark:text-white tracking-wide">{info.departureCode}</div>
                       </div>
                       
                       <div className="flex-grow px-4 flex items-center justify-center h-full pt-2">
@@ -82,17 +96,17 @@ const FlightCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: str
                       </div>
 
                       <div className="text-right">
-                          <div className="text-4xl font-black text-white tracking-wide">{info.arrivalCode}</div>
+                          <div className="text-4xl font-black text-slate-900 dark:text-white tracking-wide">{info.arrivalCode}</div>
                       </div>
                   </div>
 
                   <div className="px-5 pb-4 flex justify-between items-center">
-                      <div className="text-slate-300 font-bold text-lg tracking-widest">↗ {info.departureTime}</div>
-                      <div className="text-slate-300 font-bold text-lg tracking-widest">↘ {info.arrivalTime}</div>
+                      <div className="text-slate-400 dark:text-slate-300 font-bold text-lg tracking-widest">↗ {info.departureTime}</div>
+                      <div className="text-slate-400 dark:text-slate-300 font-bold text-lg tracking-widest">↘ {info.arrivalTime}</div>
                   </div>
 
                   {/* Bottom Row */}
-                  <div className="bg-[#1e293b] px-5 py-2 flex justify-between items-center">
+                  <div className="bg-slate-50 dark:bg-[#1e293b] px-5 py-2 flex justify-between items-center">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">FLIGHT TIME</span>
                       <div className="flex items-center gap-2 text-[#38bdf8]">
                            <HourglassIcon className="w-4 h-4" />
@@ -143,10 +157,9 @@ const ActivityCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: s
             )}
             
             <div 
-              className="absolute left-[19px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full z-20 shadow-[0_0_10px_rgba(0,0,0,0.5)] box-content"
+              className="absolute left-[19px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full z-20 shadow-[0_0_10px_rgba(0,0,0,0.5)] box-content bg-white dark:bg-[#05080F] border-[3px]"
               style={{ 
-                  backgroundColor: '#05080F', 
-                  border: `3px solid ${typeColor.hex}` 
+                  borderColor: typeColor.hex
               }}
             ></div>
 
@@ -158,27 +171,27 @@ const ActivityCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: s
                     borderColor: `rgba(${rgb}, 0.2)`
                 }}
             >
-                <div className="flex flex-col items-center justify-center min-w-[60px] pr-4 border-r border-white/10">
-                    <span className="text-[10px] text-slate-400 font-bold mb-0.5 uppercase tracking-wider">
+                <div className="flex flex-col items-center justify-center min-w-[60px] pr-4 border-r border-slate-200 dark:border-white/10">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold mb-0.5 uppercase tracking-wider">
                         {parseInt(activity.time.split(':')[0]) >= 12 ? '下午' : '上午'}
                     </span>
-                    <span className="text-3xl font-black text-white font-mono tracking-tighter leading-none">{activity.time}</span>
+                    <span className="text-3xl font-black text-slate-800 dark:text-white font-mono tracking-tighter leading-none">{activity.time}</span>
                 </div>
 
                 <div className="flex-1 px-5">
-                    <h3 className="text-white font-black text-xl mb-1 leading-tight tracking-wide">{activity.title}</h3>
-                    <div className="flex items-center gap-2 text-slate-400 text-xs font-bold">
+                    <h3 className="text-slate-900 dark:text-white font-black text-xl mb-1 leading-tight tracking-wide">{activity.title}</h3>
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-bold">
                         <MapIcon className="w-3 h-3" />
                         <span className="truncate max-w-[140px]">{activity.location || activity.title}</span>
-                        <span className="w-1 h-1 rounded-full bg-slate-600 mx-1"></span>
+                        <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-600 mx-1"></span>
                         <span>{activity.duration || '1h'}</span>
                     </div>
                 </div>
 
                 <button 
                     onClick={handleMapClick}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center border border-white/10 active:scale-90 transition-transform"
-                    style={{ color: typeColor.hex, backgroundColor: `rgba(${rgb}, 0.1)` }}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center border border-white/50 dark:border-white/10 active:scale-90 transition-transform bg-white/50 dark:bg-transparent"
+                    style={{ color: typeColor.hex }}
                 >
                     {activity.type === 'sightseeing' && <CameraIcon className="w-5 h-5" />}
                     {activity.type === 'food' && <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>}
@@ -188,41 +201,6 @@ const ActivityCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: s
         </div>
     );
 };
-
-const timezones = [
-  { label: 'GMT-12:00', value: -12 },
-  { label: 'GMT-11:00', value: -11 },
-  { label: 'GMT-10:00 Hawaii', value: -10 },
-  { label: 'GMT-09:00 Alaska', value: -9 },
-  { label: 'GMT-08:00 Pacific', value: -8 },
-  { label: 'GMT-07:00 Mountain', value: -7 },
-  { label: 'GMT-06:00 Central', value: -6 },
-  { label: 'GMT-05:00 Eastern', value: -5 },
-  { label: 'GMT-04:00 Atlantic', value: -4 },
-  { label: 'GMT-03:00 Brazil', value: -3 },
-  { label: 'GMT-02:00 Mid-Atlantic', value: -2 },
-  { label: 'GMT-01:00 Azores', value: -1 },
-  { label: 'GMT+00:00 London', value: 0 },
-  { label: 'GMT+01:00 Paris', value: 1 },
-  { label: 'GMT+02:00 Athens', value: 2 },
-  { label: 'GMT+03:00 Moscow', value: 3 },
-  { label: 'GMT+04:00 Dubai', value: 4 },
-  { label: 'GMT+05:00 Pakistan', value: 5 },
-  { label: 'GMT+06:00 Dhaka', value: 6 },
-  { label: 'GMT+07:00 Bangkok', value: 7 },
-  { label: 'GMT+08:00 Hong Kong', value: 8 },
-  { label: 'GMT+09:00 Tokyo', value: 9 },
-  { label: 'GMT+10:00 Sydney', value: 10 },
-  { label: 'GMT+11:00 Solomon Is.', value: 11 },
-  { label: 'GMT+12:00 Wellington', value: 12 },
-];
-
-interface Props {
-  trip: Trip;
-  onUpdateTrip: (trip: Trip) => void;
-  isDarkMode: boolean;
-  toggleTheme: () => void;
-}
 
 const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggleTheme }) => {
   const [selectedDate, setSelectedDate] = useState<string>(trip.startDate);
@@ -270,6 +248,10 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       arrivalTimezone: 'GMT+09:00',
       duration: ''
   });
+
+  const isFormValid = modalMode === 'PLAN' 
+    ? !!newActivity.title 
+    : !!(newFlight.flightNumber && newFlight.departureCode && newFlight.arrivalCode);
 
   // Calculate duration when flight times change
   useEffect(() => {
@@ -335,7 +317,35 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       return `DAY ${diffDays + 1}`;
   };
 
+  const closeModal = () => {
+    setShowAddModal(false);
+    setEditingActivityId(null);
+    setModalMode('PLAN');
+    setNewActivity({ 
+        time: '11:35', 
+        title: '', 
+        location: '', 
+        duration: '2h',
+        description: '',
+        type: 'sightseeing' 
+    });
+    setNewFlight({
+        flightNumber: '',
+        planeType: '',
+        departureCode: '',
+        arrivalCode: '',
+        departureDate: new Date().toISOString().split('T')[0],
+        departureTime: '09:00',
+        departureTimezone: 'GMT+08:00',
+        arrivalDate: new Date().toISOString().split('T')[0],
+        arrivalTime: '10:35',
+        arrivalTimezone: 'GMT+09:00',
+        duration: ''
+    });
+  };
+
   const handleSaveActivity = () => {
+    // ... same logic ...
     const updatedActivities = { ...trip.activities };
     if (!updatedActivities[selectedDate]) {
       updatedActivities[selectedDate] = [];
@@ -400,94 +410,87 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       closeModal();
   };
 
-  const openEditModal = (activity: Activity) => {
-      setEditingActivityId(activity.id);
-      if (activity.type === 'flight' && activity.flightInfo) {
-          setNewFlight(activity.flightInfo);
-          setModalMode('FLIGHT');
-      } else {
-          setNewActivity({
-              time: activity.time,
-              title: activity.title,
-              location: activity.location || '',
-              duration: activity.duration || '1h',
-              description: activity.description || '',
-              type: activity.type
-          });
-          setModalMode('PLAN');
-      }
-      setShowAddModal(true);
-  };
-
-  const closeModal = () => {
-    setShowAddModal(false);
-    setShowRouteModal(false);
-    setEditingActivityId(null);
-    setNewActivity({ time: '12:35', title: '', location: '', duration: '1 小時', description: '', type: 'sightseeing' });
-    setNewFlight({
-        flightNumber: '', planeType: '', departureCode: '', arrivalCode: '',
-        departureDate: new Date().toISOString().split('T')[0], departureTime: '12:35', departureTimezone: 'GMT+08:00',
-        arrivalDate: new Date().toISOString().split('T')[0], arrivalTime: '16:00', arrivalTimezone: 'GMT+09:00', duration: ''
-    });
-  };
-
-  // Drag and Drop Logic
-  const onDragStart = (e: React.DragEvent, index: number) => {
-      if (isLocked) return;
-      setDraggedIndex(index);
-  };
-  const onDragOver = (e: React.DragEvent) => {
-      if (isLocked) return;
-      e.preventDefault(); 
-  };
-  const onDrop = (e: React.DragEvent, dropIndex: number) => {
-      if (isLocked || draggedIndex === null || draggedIndex === dropIndex) return;
-      
-      const list = [...(trip.activities[selectedDate] || [])];
-      const [removed] = list.splice(draggedIndex, 1);
-      list.splice(dropIndex, 0, removed);
-      
-      const updatedActivities = { ...trip.activities, [selectedDate]: list };
-      onUpdateTrip({ ...trip, activities: updatedActivities });
-      setDraggedIndex(null);
-  };
-
   const handleWeatherSearch = () => {
-      const query = encodeURIComponent(`${trip.destination} weather`);
-      window.open(`https://www.google.com/search?q=${query}`, '_blank');
+    const query = encodeURIComponent(`${trip.destination} weather`);
+    window.open(`https://www.google.com/search?q=${query}`, '_blank');
   };
 
   const handleOpenRouteNav = () => {
-      const activities = trip.activities[selectedDate] || [];
-      const validLocations = activities.filter(a => 
-          (a.type === 'sightseeing' || a.type === 'food') && 
-          (a.location && a.location.trim() !== '')
-      );
-      setRouteLocations(validLocations);
-      setShowRouteModal(true);
+    const locations = currentActivities.filter(a => (a.location || a.title) && a.type !== 'flight');
+    setRouteLocations(locations);
+    setShowRouteModal(true);
+  };
+
+  const onDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const onDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
+
+    const newActivities = [...currentActivities];
+    const [draggedItem] = newActivities.splice(draggedIndex, 1);
+    newActivities.splice(dropIndex, 0, draggedItem);
+
+    const updatedActivities = { ...trip.activities };
+    updatedActivities[selectedDate] = newActivities;
+    onUpdateTrip({ ...trip, activities: updatedActivities });
+    setDraggedIndex(null);
+  };
+
+  const openEditModal = (activity: Activity) => {
+    setEditingActivityId(activity.id);
+    if (activity.type === 'flight' && activity.flightInfo) {
+        setModalMode('FLIGHT');
+        setNewFlight(activity.flightInfo);
+    } else {
+        setModalMode('PLAN');
+        setNewActivity({
+            time: activity.time,
+            title: activity.title,
+            location: activity.location || '',
+            duration: activity.duration || '2h',
+            description: activity.description || '',
+            type: activity.type
+        });
+    }
+    setShowAddModal(true);
   };
 
   const handleRouteOrderChange = (index: number, direction: 'up' | 'down') => {
-      const newOrder = [...routeLocations];
-      if (direction === 'up' && index > 0) {
-          [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
-      } else if (direction === 'down' && index < newOrder.length - 1) {
-          [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-      }
-      setRouteLocations(newOrder);
+    const newLocations = [...routeLocations];
+    if (direction === 'up' && index > 0) {
+        [newLocations[index], newLocations[index - 1]] = [newLocations[index - 1], newLocations[index]];
+    } else if (direction === 'down' && index < newLocations.length - 1) {
+        [newLocations[index], newLocations[index + 1]] = [newLocations[index + 1], newLocations[index]];
+    }
+    setRouteLocations(newLocations);
   };
 
   const handleConfirmRoute = () => {
-      if (routeLocations.length === 0) return;
-      const destinations = routeLocations.map(a => encodeURIComponent(a.location || a.title)).join('/');
-      const url = `https://www.google.com/maps/dir/${destinations}`;
-      window.open(url, '_blank');
-      setShowRouteModal(false);
+    if (routeLocations.length === 0) return;
+    const getQuery = (a: Activity) => encodeURIComponent(a.location || a.title);
+    
+    const origin = getQuery(routeLocations[0]);
+    const destination = getQuery(routeLocations[routeLocations.length - 1]);
+    
+    let waypoints = '';
+    if (routeLocations.length > 2) {
+        const points = routeLocations.slice(1, routeLocations.length - 1).map(getQuery);
+        waypoints = `&waypoints=${points.join('|')}`;
+    }
+    
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${waypoints}&travelmode=driving`;
+    window.open(url, '_blank');
+    setShowRouteModal(false);
   };
-
-  const isFormValid = modalMode === 'PLAN' 
-    ? newActivity.title !== '' && newActivity.time !== '' 
-    : newFlight.flightNumber !== '' && newFlight.departureCode !== '';
 
   return (
     <div className="h-full flex flex-col relative bg-transparent">
@@ -500,20 +503,20 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
             <div className="flex flex-col gap-1.5 w-full">
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)]">
-                        <MapIcon className="w-4 h-4 text-white" />
+                        <MapIcon className="w-4 h-4 text-slate-800 dark:text-white" />
                     </div>
-                    <h1 className="text-3xl font-black text-white tracking-wide leading-none drop-shadow-lg truncate max-w-[200px]">{trip.destination.split(',')[0]}</h1>
+                    <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-wide leading-none drop-shadow-lg truncate max-w-[200px]">{trip.destination.split(',')[0]}</h1>
                 </div>
                 <div className="flex items-center gap-2 pl-1">
-                    <span className="bg-white/20 text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider backdrop-blur-sm">{getDayNumber(selectedDate)}</span>
-                    <span className="text-blue-100 text-xs font-mono font-bold tracking-wide opacity-80">{selectedDate}</span>
+                    <span className="bg-white/40 dark:bg-white/20 text-slate-900 dark:text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider backdrop-blur-sm shadow-sm">{getDayNumber(selectedDate)}</span>
+                    <span className="text-slate-600 dark:text-blue-100 text-xs font-mono font-bold tracking-wide opacity-80">{selectedDate}</span>
                 </div>
             </div>
 
             {/* Right: Weather Widget */}
             <button 
                 onClick={handleWeatherSearch}
-                className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-yellow-400/20 to-orange-500/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.2)] active:scale-95 transition-transform flex-shrink-0"
+                className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-yellow-400/20 to-orange-500/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-yellow-500 dark:text-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.2)] active:scale-95 transition-transform flex-shrink-0"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
             </button>
@@ -531,8 +534,8 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                     onClick={() => setSelectedDate(date)}
                     className={`snap-center flex-shrink-0 w-[4.5rem] h-[4.5rem] rounded-[24px] flex flex-col items-center justify-center gap-1 transition-all duration-300 ${
                     isSelected 
-                        ? 'bg-white text-slate-900 shadow-[0_0_20px_rgba(255,255,255,0.4)] transform scale-105 z-10' 
-                        : 'bg-white/80 dark:bg-[#111827] text-slate-500 border border-slate-200 dark:border-white/5'
+                        ? 'bg-white text-slate-900 shadow-[0_0_20px_rgba(255,255,255,0.4)] dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] transform scale-105 z-10' 
+                        : 'bg-white/60 dark:bg-[#111827] text-slate-500 border border-slate-200 dark:border-white/5'
                     }`}
                 >
                     <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-slate-900' : 'text-slate-500'}`}>{getDayName(date)}</span>
@@ -560,10 +563,10 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
             disabled={!canSort}
             className={`flex-1 h-10 rounded-xl border flex items-center justify-center gap-2 font-bold text-xs shadow-sm transition-all ${
                 !canSort 
-                ? 'bg-[#1e293b]/40 border-white/5 text-slate-500 cursor-not-allowed opacity-50'
+                ? 'bg-slate-100 dark:bg-[#1e293b]/40 border-slate-200 dark:border-white/5 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-50'
                 : isLocked 
-                    ? 'bg-[#1e293b]/40 border-white/10 text-slate-400 active:scale-95' 
-                    : 'bg-blue-500/20 border-blue-400/30 text-blue-300 active:scale-95'
+                    ? 'bg-slate-100 dark:bg-[#1e293b]/40 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 active:scale-95' 
+                    : 'bg-blue-500/10 border-blue-400/30 text-blue-500 dark:text-blue-300 active:scale-95'
             }`}
          >
             {isLocked ? <LockClosedIcon className="w-3.5 h-3.5" /> : <LockOpenIcon className="w-3.5 h-3.5" />}
@@ -605,19 +608,19 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       {/* FAB - Fixed Position significantly lower */}
       <button 
         onClick={() => { setEditingActivityId(null); setModalMode('PLAN'); setShowAddModal(true); }}
-        className="fixed bottom-[130px] right-6 z-[60] w-16 h-16 bg-[#38bdf8] hover:bg-[#0ea5e9] rounded-full flex items-center justify-center text-white shadow-[0_0_30px_rgba(56,189,248,0.5)] active:scale-90 transition-all duration-300 border-4 border-[#05080F]"
+        className="fixed bottom-[130px] right-6 z-[60] w-16 h-16 bg-[#38bdf8] hover:bg-[#0ea5e9] rounded-full flex items-center justify-center text-white shadow-[0_0_30px_rgba(56,189,248,0.5)] active:scale-90 transition-all duration-300 border-4 border-white dark:border-[#05080F]"
       >
         <PlusIcon className="w-8 h-8 stroke-[2.5]" />
       </button>
 
       {/* Modals ... */}
       {showRouteModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[85vh]">
              {/* Route Modal Content */}
              <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-white tracking-wide">本日路線規劃</h3>
-                 <button onClick={() => setShowRouteModal(false)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white">
+                 <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">本日路線規劃</h3>
+                 <button onClick={() => setShowRouteModal(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                  </button>
              </div>
@@ -629,101 +632,99 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                     </div>
                 ) : (
                     routeLocations.map((loc, idx) => (
-                        <div key={loc.id} className="bg-[#1f2937] p-4 rounded-2xl flex items-center gap-3 border border-white/5">
+                        <div key={loc.id} className="bg-slate-50 dark:bg-[#1f2937] p-4 rounded-2xl flex items-center gap-3 border border-slate-200 dark:border-white/5">
                             <div className="w-6 h-6 rounded-full bg-[#38bdf8] text-white flex items-center justify-center text-xs font-bold">{idx + 1}</div>
                             <div className="flex-grow overflow-hidden">
-                                <p className="text-white font-bold truncate">{loc.location || loc.title}</p>
-                                <p className="text-slate-400 text-xs truncate">{loc.title}</p>
+                                <p className="text-slate-800 dark:text-white font-bold truncate">{loc.location || loc.title}</p>
+                                <p className="text-slate-500 dark:text-slate-400 text-xs truncate">{loc.title}</p>
                             </div>
                             <div className="flex flex-col gap-1">
-                                <button onClick={() => handleRouteOrderChange(idx, 'up')} disabled={idx === 0} className={`p-1 rounded bg-white/5 ${idx === 0 ? 'opacity-30' : 'hover:bg-white/10'}`}><ChevronUpIcon className="w-4 h-4 text-slate-400" /></button>
-                                <button onClick={() => handleRouteOrderChange(idx, 'down')} disabled={idx === routeLocations.length - 1} className={`p-1 rounded bg-white/5 ${idx === routeLocations.length - 1 ? 'opacity-30' : 'hover:bg-white/10'}`}><ChevronDownIcon className="w-4 h-4 text-slate-400" /></button>
+                                <button onClick={() => handleRouteOrderChange(idx, 'up')} disabled={idx === 0} className={`p-1 rounded bg-slate-200 dark:bg-white/5 ${idx === 0 ? 'opacity-30' : 'hover:bg-slate-300 dark:hover:bg-white/10'}`}><ChevronUpIcon className="w-4 h-4 text-slate-500 dark:text-slate-400" /></button>
+                                <button onClick={() => handleRouteOrderChange(idx, 'down')} disabled={idx === routeLocations.length - 1} className={`p-1 rounded bg-slate-200 dark:bg-white/5 ${idx === routeLocations.length - 1 ? 'opacity-30' : 'hover:bg-slate-300 dark:hover:bg-white/10'}`}><ChevronDownIcon className="w-4 h-4 text-slate-500 dark:text-slate-400" /></button>
                             </div>
                         </div>
                     ))
                 )}
              </div>
-             <button onClick={handleConfirmRoute} disabled={routeLocations.length < 1} className={`w-full py-4 rounded-2xl font-bold border transition-all duration-300 shadow-lg mt-auto flex items-center justify-center gap-2 ${routeLocations.length >= 1 ? 'bg-[#38bdf8] text-white border-transparent shadow-blue-500/30' : 'bg-[#1f2937] text-slate-500 border-white/5 cursor-not-allowed'}`}><NavigationArrowIcon className="w-5 h-5" />開啟 Google Maps 多點導航</button>
+             <button onClick={handleConfirmRoute} disabled={routeLocations.length < 1} className={`w-full py-4 rounded-2xl font-bold border transition-all duration-300 shadow-lg mt-auto flex items-center justify-center gap-2 ${routeLocations.length >= 1 ? 'bg-[#38bdf8] text-white border-transparent shadow-blue-500/30' : 'bg-slate-100 dark:bg-[#1f2937] text-slate-500 border-slate-200 dark:border-white/5 cursor-not-allowed'}`}><NavigationArrowIcon className="w-5 h-5" />開啟 Google Maps 多點導航</button>
           </div>
         </div>
       )}
 
       {showAddModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
              <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-white tracking-wide">{editingActivityId ? '編輯行程' : (modalMode === 'PLAN' ? '規劃行程' : '新增航班資訊')}</h3>
-                 <button onClick={closeModal} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                 <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">{editingActivityId ? '編輯行程' : (modalMode === 'PLAN' ? '規劃行程' : '新增航班資訊')}</h3>
+                 <button onClick={closeModal} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
              </div>
              
              <div className="flex-grow overflow-y-auto no-scrollbar space-y-4 pb-4">
              {modalMode === 'PLAN' ? (
-                 /* ... Existing Plan Form Code ... */
                  <div className="space-y-4">
-                    {/* Simplified for brevity - Assume same Plan Form structure but kept here in principle */}
-                    <div className="relative p-1 rounded-2xl bg-[#1f2937] border border-white/5 backdrop-blur-xl flex h-14 shadow-inner mb-6">
-                        <div className={`absolute top-1 bottom-1 w-[calc(33.33%-4px)] rounded-xl bg-[#374151] border border-white/10 shadow-lg transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0`} style={{ left: newActivity.type === 'sightseeing' ? '4px' : newActivity.type === 'food' ? 'calc(33.33% + 2px)' : 'calc(66.66%)' }}></div>
-                        <button onClick={() => setNewActivity({...newActivity, type: 'sightseeing'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'sightseeing' ? 'text-purple-400' : 'text-slate-400'}`}><CameraIcon className="w-4 h-4" /> 觀光</button>
-                        <button onClick={() => setNewActivity({...newActivity, type: 'food'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'food' ? 'text-emerald-400' : 'text-slate-400'}`}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg> 美食</button>
-                        <button onClick={() => setNewActivity({...newActivity, type: 'transport'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'transport' ? 'text-yellow-400' : 'text-slate-400'}`}><BusIcon className="w-4 h-4" /> 交通</button>
+                    <div className="relative p-1 rounded-2xl bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 backdrop-blur-xl flex h-14 shadow-inner mb-6">
+                        <div className={`absolute top-1 bottom-1 w-[calc(33.33%-4px)] rounded-xl bg-white dark:bg-[#374151] border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0`} style={{ left: newActivity.type === 'sightseeing' ? '4px' : newActivity.type === 'food' ? 'calc(33.33% + 2px)' : 'calc(66.66%)' }}></div>
+                        <button onClick={() => setNewActivity({...newActivity, type: 'sightseeing'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'sightseeing' ? 'text-purple-500 dark:text-purple-400' : 'text-slate-400'}`}><CameraIcon className="w-4 h-4" /> 觀光</button>
+                        <button onClick={() => setNewActivity({...newActivity, type: 'food'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'food' ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'}`}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg> 美食</button>
+                        <button onClick={() => setNewActivity({...newActivity, type: 'transport'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'transport' ? 'text-yellow-500 dark:text-yellow-400' : 'text-slate-400'}`}><BusIcon className="w-4 h-4" /> 交通</button>
                     </div>
-                    <div><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">行程名稱</label><div className="bg-[#1f2937] border border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><TagIcon className="w-5 h-5" /></span><input type="text" placeholder="例如：參觀東京鐵塔" className="bg-transparent w-full text-white placeholder-slate-600 focus:outline-none font-medium" value={newActivity.title} onChange={e => setNewActivity({...newActivity, title: e.target.value})} /></div></div>
-                    <div className="flex gap-4"><div className="flex-1"><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">開始時間</label><div className="bg-[#1f2937] border border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><ClockIcon className="w-5 h-5" /></span><input type="time" className="bg-transparent w-full text-white focus:outline-none font-bold appearance-none" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} /></div></div><div className="flex-1"><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">預計停留</label><div className="bg-[#1f2937] border border-white/5 rounded-2xl px-4 py-3.5 flex items-center gap-3 h-[58px]"><span className="text-slate-400"><ClockIcon className="w-5 h-5" /></span><select className="bg-transparent w-full text-white focus:outline-none font-bold text-sm" value={newActivity.duration} onChange={e => setNewActivity({...newActivity, duration: e.target.value})}>{Array.from({ length: 36 }, (_, i) => (i + 1) * 0.5).map(val => (<option key={val} value={`${val}h`} className="bg-[#1f2937]">{val}h</option>))}</select></div></div></div>
-                    <div><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">地點 (輸入可跳轉地圖)</label><div className="bg-[#1f2937] border border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><MapIcon className="w-5 h-5" /></span><input type="text" placeholder="輸入具體地址或地標" className="bg-transparent w-full text-white placeholder-slate-600 focus:outline-none font-medium" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} /></div></div>
+                    <div><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">行程名稱</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><TagIcon className="w-5 h-5" /></span><input type="text" placeholder="例如：參觀東京鐵塔" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.title} onChange={e => setNewActivity({...newActivity, title: e.target.value})} /></div></div>
+                    <div className="flex gap-4"><div className="flex-1"><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">開始時間</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><ClockIcon className="w-5 h-5" /></span><input type="time" className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold appearance-none" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} /></div></div><div className="flex-1"><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">預計停留</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl px-4 py-3.5 flex items-center gap-3 h-[58px]"><span className="text-slate-400"><ClockIcon className="w-5 h-5" /></span><select className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold text-sm" value={newActivity.duration} onChange={e => setNewActivity({...newActivity, duration: e.target.value})}>{Array.from({ length: 36 }, (_, i) => (i + 1) * 0.5).map(val => (<option key={val} value={`${val}h`} className="bg-white dark:bg-[#1f2937]">{val}h</option>))}</select></div></div></div>
+                    <div><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">地點 (輸入可跳轉地圖)</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><MapIcon className="w-5 h-5" /></span><input type="text" placeholder="輸入具體地址或地標" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} /></div></div>
                  </div>
              ) : (
                  <div className="space-y-6">
                      <div className="grid grid-cols-2 gap-4">
                          <div>
                              <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">航班編號</label>
-                             <div className="bg-[#1f2937] border border-white/5 rounded-2xl p-3.5">
-                                 <input type="text" placeholder="CX500" className="w-full bg-transparent text-white font-bold text-center uppercase focus:outline-none placeholder-slate-600" value={newFlight.flightNumber} onChange={e => setNewFlight({...newFlight, flightNumber: e.target.value.toUpperCase()})} />
+                             <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-3.5">
+                                 <input type="text" placeholder="CX500" className="w-full bg-transparent text-slate-800 dark:text-white font-bold text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.flightNumber} onChange={e => setNewFlight({...newFlight, flightNumber: e.target.value.toUpperCase()})} />
                              </div>
                          </div>
                          <div>
                              <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">機型 (選填)</label>
-                             <div className="bg-[#1f2937] border border-white/5 rounded-2xl p-3.5">
-                                 <input type="text" placeholder="A350" className="w-full bg-transparent text-white font-bold text-center uppercase focus:outline-none placeholder-slate-600" value={newFlight.planeType} onChange={e => setNewFlight({...newFlight, planeType: e.target.value.toUpperCase()})} />
+                             <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-3.5">
+                                 <input type="text" placeholder="A350" className="w-full bg-transparent text-slate-800 dark:text-white font-bold text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.planeType} onChange={e => setNewFlight({...newFlight, planeType: e.target.value.toUpperCase()})} />
                              </div>
                          </div>
                      </div>
                      <div className="grid grid-cols-2 gap-4">
                          <div>
                              <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">出發地代碼</label>
-                             <div className="bg-[#1f2937] border border-white/5 rounded-2xl p-4">
-                                 <input type="text" placeholder="HKG" className="w-full bg-transparent text-white font-black text-2xl text-center uppercase focus:outline-none placeholder-slate-600" value={newFlight.departureCode} onChange={e => setNewFlight({...newFlight, departureCode: e.target.value.toUpperCase()})} />
+                             <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
+                                 <input type="text" placeholder="HKG" className="w-full bg-transparent text-slate-800 dark:text-white font-black text-2xl text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.departureCode} onChange={e => setNewFlight({...newFlight, departureCode: e.target.value.toUpperCase()})} />
                              </div>
                          </div>
                          <div>
                              <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">目的地代碼</label>
-                             <div className="bg-[#1f2937] border border-white/5 rounded-2xl p-4">
-                                 <input type="text" placeholder="NRT" className="w-full bg-transparent text-white font-black text-2xl text-center uppercase focus:outline-none placeholder-slate-600" value={newFlight.arrivalCode} onChange={e => setNewFlight({...newFlight, arrivalCode: e.target.value.toUpperCase()})} />
+                             <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
+                                 <input type="text" placeholder="NRT" className="w-full bg-transparent text-slate-800 dark:text-white font-black text-2xl text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.arrivalCode} onChange={e => setNewFlight({...newFlight, arrivalCode: e.target.value.toUpperCase()})} />
                              </div>
                          </div>
                      </div>
                      {/* Departure */}
-                     <div className="bg-[#1e293b]/50 rounded-[24px] p-4 border border-white/5">
+                     <div className="bg-slate-50 dark:bg-[#1e293b]/50 rounded-[24px] p-4 border border-slate-200 dark:border-white/5">
                          <div className="flex items-center gap-2 mb-4 text-[#38bdf8]"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" /></svg><span className="font-bold text-sm">出發資訊</span></div>
                          <div className="grid grid-cols-2 gap-4 mb-4">
-                             <div className="bg-[#0f172a] rounded-xl p-3 border border-white/5"><input type="date" value={newFlight.departureDate} onChange={e => setNewFlight({...newFlight, departureDate: e.target.value})} className="bg-transparent text-white text-sm font-bold w-full focus:outline-none" /></div>
-                             <div className="bg-[#0f172a] rounded-xl p-3 border border-white/5"><input type="time" value={newFlight.departureTime} onChange={e => setNewFlight({...newFlight, departureTime: e.target.value})} className="bg-transparent text-white text-sm font-bold w-full focus:outline-none" /></div>
+                             <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="date" value={newFlight.departureDate} onChange={e => setNewFlight({...newFlight, departureDate: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
+                             <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="time" value={newFlight.departureTime} onChange={e => setNewFlight({...newFlight, departureTime: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
                          </div>
-                         <div className="bg-[#0f172a] rounded-xl p-3 border border-white/5 flex justify-between items-center relative">
+                         <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5 flex justify-between items-center relative">
                              <select className="absolute inset-0 bg-transparent text-transparent w-full opacity-0 z-10" value={depTz} onChange={e => setDepTz(Number(e.target.value))}>{timezones.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}</select>
-                             <span className="text-white text-sm font-bold truncate">{timezones.find(t => t.value === depTz)?.label}</span>
+                             <span className="text-slate-800 dark:text-white text-sm font-bold truncate">{timezones.find(t => t.value === depTz)?.label}</span>
                              <ChevronRightIcon className="w-4 h-4 text-slate-500" />
                          </div>
                      </div>
                      {/* Arrival */}
-                     <div className="bg-[#1e293b]/50 rounded-[24px] p-4 border border-white/5">
+                     <div className="bg-slate-50 dark:bg-[#1e293b]/50 rounded-[24px] p-4 border border-slate-200 dark:border-white/5">
                          <div className="flex items-center gap-2 mb-4 text-[#34d399]"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg><span className="font-bold text-sm">抵達資訊</span></div>
                          <div className="grid grid-cols-2 gap-4 mb-4">
-                             <div className="bg-[#0f172a] rounded-xl p-3 border border-white/5"><input type="date" value={newFlight.arrivalDate} onChange={e => setNewFlight({...newFlight, arrivalDate: e.target.value})} className="bg-transparent text-white text-sm font-bold w-full focus:outline-none" /></div>
-                             <div className="bg-[#0f172a] rounded-xl p-3 border border-white/5"><input type="time" value={newFlight.arrivalTime} onChange={e => setNewFlight({...newFlight, arrivalTime: e.target.value})} className="bg-transparent text-white text-sm font-bold w-full focus:outline-none" /></div>
+                             <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="date" value={newFlight.arrivalDate} onChange={e => setNewFlight({...newFlight, arrivalDate: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
+                             <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="time" value={newFlight.arrivalTime} onChange={e => setNewFlight({...newFlight, arrivalTime: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
                          </div>
-                         <div className="bg-[#0f172a] rounded-xl p-3 border border-white/5 flex justify-between items-center relative">
+                         <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5 flex justify-between items-center relative">
                              <select className="absolute inset-0 bg-transparent text-transparent w-full opacity-0 z-10" value={arrTz} onChange={e => setArrTz(Number(e.target.value))}>{timezones.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}</select>
-                             <span className="text-white text-sm font-bold truncate">{timezones.find(t => t.value === arrTz)?.label}</span>
+                             <span className="text-slate-800 dark:text-white text-sm font-bold truncate">{timezones.find(t => t.value === arrTz)?.label}</span>
                              <ChevronRightIcon className="w-4 h-4 text-slate-500" />
                          </div>
                      </div>
@@ -731,7 +732,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
              )}
              </div>
              {!editingActivityId && (
-                 <div className="mt-2 mb-4 relative p-1 rounded-2xl bg-[#1f2937]/50 border border-white/5 backdrop-blur-xl flex h-14 shadow-inner">
+                 <div className="mt-2 mb-4 relative p-1 rounded-2xl bg-slate-50 dark:bg-[#1f2937]/50 border border-slate-200 dark:border-white/5 backdrop-blur-xl flex h-14 shadow-inner">
                     <div 
                         className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl shadow-[0_0_15px_rgba(56,189,248,0.3)] transition-all duration-300 ease-out z-0
                         ${modalMode === 'PLAN' ? 'left-1 bg-gradient-to-tr from-[#38bdf8] to-blue-500' : 'left-[calc(50%+4px)] bg-gradient-to-tr from-sky-400 to-cyan-400'}
@@ -754,7 +755,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
              )}
              <div className="pt-2 flex gap-3 pb-safe">
                  {editingActivityId && <button onClick={handleDeleteActivity} className="w-14 flex items-center justify-center rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20"><TrashIcon className="w-5 h-5" /></button>}
-                 <button onClick={handleSaveActivity} disabled={!isFormValid} className={`flex-1 py-4 rounded-2xl font-bold border transition-all duration-300 shadow-lg ${isFormValid ? 'bg-[#38bdf8] text-white border-transparent shadow-blue-500/30' : 'bg-[#1f2937] text-slate-500 border-white/5 cursor-not-allowed'}`}>{isFormValid ? '儲存變更' : '請填寫完整資訊'}</button>
+                 <button onClick={handleSaveActivity} disabled={!isFormValid} className={`flex-1 py-4 rounded-2xl font-bold border transition-all duration-300 shadow-lg ${isFormValid ? 'bg-[#38bdf8] text-white border-transparent shadow-blue-500/30' : 'bg-slate-100 dark:bg-[#1f2937] text-slate-500 border-slate-200 dark:border-white/5 cursor-not-allowed'}`}>{isFormValid ? '儲存變更' : '請填寫完整資訊'}</button>
              </div>
           </div>
         </div>
