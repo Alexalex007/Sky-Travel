@@ -626,6 +626,10 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                     )}
                 </div>
             </div>
+        </>
+      ) : (
+        renderListView(currentView)
+      )}
 
             {/* --- MODALS --- */}
 
@@ -820,10 +824,6 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                     </div>
                 </div>
             )}
-        </>
-      ) : (
-        renderListView(currentView)
-      )}
     </div>
   );
 };
