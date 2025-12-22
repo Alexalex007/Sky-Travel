@@ -5,14 +5,63 @@ import ItineraryTool from './components/ItineraryTool';
 import PackingTool from './components/PackingTool';
 import ExpensesTool from './components/FoodTool';
 import ToolboxTool from './components/PhraseTool';
-import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, GlobeIcon, SparklesIcon } from './components/Icons';
+import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, GlobeIcon, SparklesIcon, ClipboardDocumentListIcon, ArchiveBoxArrowDownIcon, TrashIcon, XMarkIcon, ArchiveIcon, RefreshIcon } from './components/Icons';
+
+const APP_VERSION = "v4.0.1";
+const CHANGELOG_DATA = [
+    {
+        version: "v4.0.1",
+        date: "2025-12-21",
+        items: [
+            "修正：修復設定頁與百寶箱底部留白過多的問題",
+            "優化：調整底部導航列的視覺體驗"
+        ]
+    },
+    {
+        version: "v4.0.0",
+        date: "2025-12-20",
+        items: [
+            "新增：行程編輯功能 (目的地/日期/名稱)",
+            "新增：行程封存與還原功能",
+            "新增：刪除行程功能",
+            "優化：設定頁面介面與更新日誌",
+            "優化：分享功能"
+        ]
+    },
+    {
+        version: "v3.8.0",
+        date: "2025-11-15",
+        items: [
+            "新增：黑暗模式支援",
+            "新增：旅遊百寶箱 (天氣、新聞、匯率)",
+            "優化：底部導航列視覺",
+            "修正：部分已知的錯誤"
+        ]
+    }
+];
 
 function App() {
   const [view, setView] = useState<'HOME' | 'CREATE' | 'TRIP'>('HOME');
   const [activeTab, setActiveTab] = useState<Tab>(Tab.ITINERARY);
   const [tripData, setTripData] = useState<Trip | null>(null);
   const [savedTrip, setSavedTrip] = useState<Trip | null>(null);
+  const [archivedTrips, setArchivedTrips] = useState<Trip[]>([]);
   
+  // Modals & Popups State
+  const [isChangelogOpen, setIsChangelogOpen] = useState(false);
+  const [isEditTripOpen, setIsEditTripOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isArchiveConfirmOpen, setIsArchiveConfirmOpen] = useState(false);
+  const [showArchivedList, setShowArchivedList] = useState(false);
+  
+  // Edit Trip Form State
+  const [editTripData, setEditTripData] = useState<{
+      name: string;
+      destination: string;
+      startDate: string;
+      endDate: string;
+  }>({ name: '', destination: '', startDate: '', endDate: '' });
+
   // Initialize dark mode from local storage
   const [isDarkMode, setIsDarkMode] = useState(() => {
       if (typeof window !== 'undefined') {
@@ -51,8 +100,9 @@ function App() {
     { id: 1, destination: '', startDate: '', endDate: '' }
   ]);
 
-  // Load saved trip on mount
+  // Load saved trip and archives on mount
   useEffect(() => {
+    // Active Trip
     const saved = localStorage.getItem('sky_travel_trip_data');
     if (saved) {
       try {
@@ -61,6 +111,16 @@ function App() {
       } catch (e) {
         console.error("Failed to parse saved trip", e);
       }
+    }
+    
+    // Archived Trips
+    const archives = localStorage.getItem('sky_travel_archived_trips');
+    if (archives) {
+        try {
+            setArchivedTrips(JSON.parse(archives));
+        } catch (e) {
+            console.error("Failed to parse archives", e);
+        }
     }
   }, []);
 
@@ -82,6 +142,87 @@ function App() {
     }
     localStorage.setItem('sky_travel_dark_mode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);
+
+  // --- Handlers ---
+
+  const handleShare = async () => {
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Sky Travel',
+                text: '快來使用 Sky Travel 規劃你的下一趟旅程！極簡設計，星際漫遊體驗。',
+                url: window.location.href,
+            });
+        } catch (error) {
+            console.log('Error sharing', error);
+        }
+    } else {
+        alert('您的裝置不支援原生分享功能，請手動複製網址。');
+    }
+  };
+
+  const openEditModal = () => {
+      if (!tripData) return;
+      setEditTripData({
+          name: tripData.name,
+          destination: tripData.destination,
+          startDate: tripData.startDate,
+          endDate: tripData.endDate
+      });
+      setIsEditTripOpen(true);
+  };
+
+  const handleConfirmEdit = () => {
+      if (!tripData) return;
+      const updatedTrip = {
+          ...tripData,
+          name: editTripData.name,
+          destination: editTripData.destination,
+          startDate: editTripData.startDate,
+          endDate: editTripData.endDate
+      };
+      setTripData(updatedTrip);
+      setIsEditTripOpen(false);
+  };
+
+  const handleDeleteTrip = () => {
+      setTripData(null);
+      setSavedTrip(null);
+      localStorage.removeItem('sky_travel_trip_data');
+      setIsDeleteConfirmOpen(false);
+      setView('HOME');
+  };
+
+  const handleArchiveTrip = () => {
+      if (!tripData) return;
+      
+      const newArchives = [tripData, ...archivedTrips];
+      setArchivedTrips(newArchives);
+      localStorage.setItem('sky_travel_archived_trips', JSON.stringify(newArchives));
+      
+      // Clear active trip
+      setTripData(null);
+      setSavedTrip(null);
+      localStorage.removeItem('sky_travel_trip_data');
+      
+      setIsArchiveConfirmOpen(false);
+      setView('HOME');
+  };
+
+  const handleRestoreTrip = (trip: Trip) => {
+      // Restore selected trip to active
+      setTripData(trip);
+      setSavedTrip(trip);
+      localStorage.setItem('sky_travel_trip_data', JSON.stringify(trip));
+      
+      // Remove from archives (optional: or keep copy? usually restore implies moving back)
+      const newArchives = archivedTrips.filter(t => t.id !== trip.id);
+      setArchivedTrips(newArchives);
+      localStorage.setItem('sky_travel_archived_trips', JSON.stringify(newArchives));
+      
+      setShowArchivedList(false);
+      setShowHomeSettings(false);
+  };
 
   // Logic to handle changing a stop's data
   const handleStopChange = (id: number, field: keyof Stop, value: string) => {
@@ -187,25 +328,29 @@ function App() {
   }, [view]);
 
   const SettingsView = () => (
-    <div className="h-full flex flex-col p-6 pb-24 bg-transparent transition-colors duration-300">
-       <div className="flex justify-between items-center mb-8">
+    <div className="h-full flex flex-col p-6 pb-0 bg-transparent transition-colors duration-300 relative">
+       {/* Settings Header */}
+       <div className="flex justify-between items-center mb-8 flex-shrink-0">
            <button onClick={() => setView('HOME')} className="w-10 h-10 rounded-2xl flex items-center justify-center border shadow-sm transition-colors bg-white border-slate-200 text-slate-500 hover:bg-slate-50 dark:bg-[#1e293b] dark:border-white/5 dark:text-slate-400 dark:hover:bg-[#334155]">
                <ChevronLeftIcon className="w-5 h-5" />
            </button>
            <div className="w-16 h-16 rounded-full flex items-center justify-center border shadow-lg shadow-blue-500/10 bg-white border-slate-200 dark:bg-[#1e293b] dark:border-white/5">
                <CogIcon className="w-8 h-8 text-slate-400 dark:text-slate-300" />
            </div>
-           <button className="w-10 h-10 rounded-2xl flex items-center justify-center text-blue-500 border shadow-sm bg-white border-slate-200 dark:bg-[#1e293b] dark:border-white/5 dark:text-blue-400">
+           <button 
+              onClick={handleShare}
+              className="w-10 h-10 rounded-2xl flex items-center justify-center text-blue-500 border shadow-sm bg-white border-slate-200 dark:bg-[#1e293b] dark:border-white/5 dark:text-blue-400 active:scale-95 transition-transform"
+           >
                <ShareIcon className="w-5 h-5" />
            </button>
        </div>
 
-       <div className="text-center mb-10">
+       <div className="text-center mb-10 flex-shrink-0">
            <h2 className="text-2xl font-bold mb-1 text-slate-800 dark:text-white">設定與管理</h2>
-           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">版本 v3.8.0</p>
+           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">版本 {APP_VERSION}</p>
        </div>
 
-       <div className="space-y-4 overflow-y-auto no-scrollbar">
+       <div className="flex-grow space-y-4 overflow-y-auto no-scrollbar pb-32">
            
            <div 
              className="glass-card p-4 rounded-[24px] flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1e293b] transition-colors cursor-pointer"
@@ -225,20 +370,28 @@ function App() {
                </div>
            </div>
 
-           <div className="glass-card p-4 rounded-[24px] flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1e293b] transition-colors cursor-pointer">
+           <div 
+             className="glass-card p-4 rounded-[24px] flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1e293b] transition-colors cursor-pointer active:scale-[0.98]"
+             onClick={() => setIsChangelogOpen(true)}
+           >
                <div className="flex items-center gap-4">
-                   <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-500 dark:bg-indigo-500/20 dark:text-indigo-400 flex items-center justify-center">
-                       <UsersIcon className="w-5 h-5" />
+                   <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400 flex items-center justify-center">
+                       <ClipboardDocumentListIcon className="w-5 h-5" />
                    </div>
                    <div>
-                       <h3 className="font-bold text-sm text-slate-800 dark:text-white">邀請旅伴協作</h3>
-                       <p className="text-[10px] font-bold text-slate-500">即時同步行程</p>
+                       <h3 className="font-bold text-sm text-slate-800 dark:text-white">更新日誌</h3>
+                       <p className="text-[10px] font-bold text-slate-500">查看版本更新紀錄</p>
                    </div>
                </div>
                <ChevronRightIcon className="w-4 h-4 text-slate-600" />
            </div>
 
-           <div className="glass-card p-4 rounded-[24px] flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1e293b] transition-colors cursor-pointer">
+           <div className="h-px bg-slate-200 dark:bg-white/10 mx-4 my-2"></div>
+
+           <div 
+             className="glass-card p-4 rounded-[24px] flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1e293b] transition-colors cursor-pointer active:scale-[0.98]"
+             onClick={openEditModal}
+           >
                <div className="flex items-center gap-4">
                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-500 dark:bg-emerald-500/20 dark:text-emerald-400 flex items-center justify-center">
                        <EditIcon className="w-5 h-5" />
@@ -249,6 +402,38 @@ function App() {
                    </div>
                </div>
                <ChevronRightIcon className="w-4 h-4 text-slate-600" />
+           </div>
+
+           <div 
+             className="glass-card p-4 rounded-[24px] flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1e293b] transition-colors cursor-pointer active:scale-[0.98]"
+             onClick={() => setIsArchiveConfirmOpen(true)}
+           >
+               <div className="flex items-center gap-4">
+                   <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-700/50 dark:text-slate-400 flex items-center justify-center">
+                       <ArchiveBoxArrowDownIcon className="w-5 h-5" />
+                   </div>
+                   <div>
+                       <h3 className="font-bold text-sm text-slate-800 dark:text-white">封存旅程</h3>
+                       <p className="text-[10px] font-bold text-slate-500">儲存至歷史紀錄</p>
+                   </div>
+               </div>
+               <ChevronRightIcon className="w-4 h-4 text-slate-600" />
+           </div>
+
+            <div 
+             className="glass-card p-4 rounded-[24px] flex items-center justify-between group hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors cursor-pointer active:scale-[0.98] border-red-100 dark:border-red-900/20"
+             onClick={() => setIsDeleteConfirmOpen(true)}
+           >
+               <div className="flex items-center gap-4">
+                   <div className="w-10 h-10 rounded-xl bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-400 flex items-center justify-center">
+                       <TrashIcon className="w-5 h-5" />
+                   </div>
+                   <div>
+                       <h3 className="font-bold text-sm text-red-500 dark:text-red-400">刪除本次旅程</h3>
+                       <p className="text-[10px] font-bold text-red-300 dark:text-red-500/70">此操作無法復原</p>
+                   </div>
+               </div>
+               <ChevronRightIcon className="w-4 h-4 text-red-300" />
            </div>
        </div>
     </div>
@@ -265,19 +450,23 @@ function App() {
         {/* Top Right Settings Button */}
         <div className="absolute top-6 right-6 z-50 flex flex-col items-end">
             <button 
-                onClick={() => setShowHomeSettings(!showHomeSettings)}
+                onClick={() => {
+                    setShowHomeSettings(!showHomeSettings);
+                    setShowArchivedList(false);
+                }}
                 className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-slate-500 dark:text-white flex items-center justify-center hover:bg-white/20 transition-all shadow-lg active:scale-95 group"
             >
                 <CogIcon className={`w-6 h-6 transition-transform duration-500 ${showHomeSettings ? 'rotate-180' : 'group-hover:rotate-45'}`} />
             </button>
 
             {showHomeSettings && (
-                <div className="mt-3 p-2 bg-white/90 dark:bg-[#1e293b]/95 backdrop-blur-2xl rounded-[20px] border border-slate-200 dark:border-white/10 shadow-2xl animate-fade-in-up w-48 z-50">
+                <div className="mt-3 bg-white/90 dark:bg-[#1e293b]/95 backdrop-blur-2xl rounded-[24px] border border-slate-200 dark:border-white/10 shadow-2xl animate-fade-in-up w-56 z-50 overflow-hidden p-2">
+                    {/* Dark Mode Toggle */}
                     <button 
                         onClick={() => {
                             setIsDarkMode(!isDarkMode);
                         }}
-                        className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group"
+                        className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group mb-1"
                     >
                         <div className="flex items-center gap-3">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isDarkMode ? 'bg-violet-500/20 text-violet-400' : 'bg-orange-500/10 text-orange-500'}`}>
@@ -288,6 +477,47 @@ function App() {
                             </span>
                         </div>
                     </button>
+                    
+                    {/* Archived Trips Button */}
+                    <button 
+                        onClick={() => setShowArchivedList(!showArchivedList)}
+                        className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300">
+                                <ArchiveIcon className="w-4 h-4" />
+                            </div>
+                            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                                已封存的旅程
+                            </span>
+                        </div>
+                        <ChevronRightIcon className={`w-4 h-4 text-slate-400 transition-transform ${showArchivedList ? 'rotate-90' : ''}`} />
+                    </button>
+
+                    {/* Archived List Sub-menu */}
+                    {showArchivedList && (
+                        <div className="mt-2 pl-2 pr-1 pb-1 space-y-1 max-h-40 overflow-y-auto no-scrollbar border-t border-slate-200 dark:border-white/5 pt-2">
+                            {archivedTrips.length === 0 ? (
+                                <p className="text-xs text-slate-400 text-center py-2 font-bold">暫無封存紀錄</p>
+                            ) : (
+                                archivedTrips.map(trip => (
+                                    <button 
+                                        key={trip.id}
+                                        onClick={() => handleRestoreTrip(trip)}
+                                        className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left group"
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-bold text-slate-800 dark:text-white truncate">{trip.name}</p>
+                                            <p className="text-[10px] text-slate-500 truncate">{trip.destination} • {trip.startDate}</p>
+                                        </div>
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                             <RefreshIcon className="w-4 h-4 text-blue-500" />
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -492,8 +722,8 @@ function App() {
   // TRIP VIEW
   return (
     <div className="h-full bg-transparent relative transition-colors duration-300">
-      {/* Main Content Area - Added padding bottom to prevent nav overlap */}
-      <div className="h-full overflow-hidden pb-32"> 
+      {/* Main Content Area - Remove extra padding to let children control it */}
+      <div className="h-full overflow-hidden pb-0"> 
         {activeTab === Tab.ITINERARY && tripData && (
           <ItineraryTool 
              trip={tripData} 
@@ -563,6 +793,156 @@ function App() {
           />
         </div>
       </div>
+
+      {/* --- Global Modals --- */}
+      
+      {/* 1. Changelog Modal */}
+      {isChangelogOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-6 animate-fade-in">
+              <div className="bg-white/90 dark:bg-[#0f172a]/90 w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative animate-slide-up backdrop-blur-xl flex flex-col max-h-[80vh]">
+                  <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+                          <ClipboardDocumentListIcon className="w-6 h-6 text-[#38bdf8]" />
+                          更新日誌
+                      </h3>
+                      <button onClick={() => setIsChangelogOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+                          <XMarkIcon className="w-5 h-5" />
+                      </button>
+                  </div>
+                  
+                  <div className="flex-grow overflow-y-auto no-scrollbar space-y-6 pr-2">
+                      {CHANGELOG_DATA.map((log, index) => (
+                          <div key={index} className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-700">
+                              <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-[#38bdf8] ring-4 ring-white dark:ring-[#0f172a]"></div>
+                              <div className="mb-2">
+                                  <span className="text-lg font-black text-slate-800 dark:text-white mr-2">{log.version}</span>
+                                  <span className="text-xs font-bold text-slate-400">{log.date}</span>
+                              </div>
+                              <ul className="space-y-2">
+                                  {log.items.map((item, idx) => (
+                                      <li key={idx} className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+                                          • {item}
+                                      </li>
+                                  ))}
+                              </ul>
+                          </div>
+                      ))}
+                  </div>
+                  <div className="pt-6 mt-4 border-t border-slate-100 dark:border-white/5 text-center">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sky Travel {APP_VERSION}</p>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* 2. Edit Trip Modal */}
+      {isEditTripOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+              <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative animate-slide-up">
+                  <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-bold text-slate-800 dark:text-white">修改旅程資訊</h3>
+                      <button onClick={() => setIsEditTripOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                          <XMarkIcon className="w-5 h-5" />
+                      </button>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                      <div>
+                          <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">旅程名稱</label>
+                          <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
+                              <input 
+                                  type="text" 
+                                  value={editTripData.name}
+                                  onChange={e => setEditTripData({...editTripData, name: e.target.value})}
+                                  className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg" 
+                              />
+                          </div>
+                      </div>
+                      <div>
+                          <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">目的地</label>
+                          <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
+                              <input 
+                                  type="text" 
+                                  value={editTripData.destination}
+                                  onChange={e => setEditTripData({...editTripData, destination: e.target.value})}
+                                  className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg" 
+                              />
+                          </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                          <div>
+                              <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">抵達日期</label>
+                              <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-3">
+                                  <input 
+                                      type="date" 
+                                      value={editTripData.startDate}
+                                      onChange={e => setEditTripData({...editTripData, startDate: e.target.value})}
+                                      className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none text-sm" 
+                                  />
+                              </div>
+                          </div>
+                          <div>
+                              <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">離開日期</label>
+                              <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-3">
+                                  <input 
+                                      type="date" 
+                                      value={editTripData.endDate}
+                                      onChange={e => setEditTripData({...editTripData, endDate: e.target.value})}
+                                      className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none text-sm" 
+                                  />
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <button 
+                      onClick={handleConfirmEdit}
+                      className="w-full py-4 bg-[#38bdf8] text-white font-black text-lg rounded-3xl hover:bg-[#0ea5e9] shadow-lg shadow-blue-500/30 transition-colors"
+                  >
+                      儲存變更
+                  </button>
+              </div>
+          </div>
+      )}
+
+      {/* 3. Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-6 animate-fade-in">
+              <div className="bg-white dark:bg-[#0f172a] w-full max-w-xs rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl text-center animate-slide-up">
+                  <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/20 text-red-500 mx-auto flex items-center justify-center mb-4">
+                      <TrashIcon className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">確定要刪除嗎？</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
+                      此操作將永久刪除本次旅程計畫，資料無法復原。
+                  </p>
+                  <div className="flex gap-3">
+                      <button onClick={() => setIsDeleteConfirmOpen(false)} className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-[#1e293b] text-slate-500 dark:text-slate-400 font-bold">取消</button>
+                      <button onClick={handleDeleteTrip} className="flex-1 py-3 rounded-2xl bg-red-500 text-white font-bold shadow-lg shadow-red-500/30">確認刪除</button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* 4. Archive Confirmation Modal */}
+      {isArchiveConfirmOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-6 animate-fade-in">
+              <div className="bg-white dark:bg-[#0f172a] w-full max-w-xs rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl text-center animate-slide-up">
+                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 mx-auto flex items-center justify-center mb-4">
+                      <ArchiveBoxArrowDownIcon className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">封存本次旅程</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
+                      旅程將移至「已封存」，您可以隨時在首頁的設定選單中還原。
+                  </p>
+                  <div className="flex gap-3">
+                      <button onClick={() => setIsArchiveConfirmOpen(false)} className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-[#1e293b] text-slate-500 dark:text-slate-400 font-bold">取消</button>
+                      <button onClick={handleArchiveTrip} className="flex-1 py-3 rounded-2xl bg-slate-800 dark:bg-white text-white dark:text-slate-900 font-bold shadow-lg">確認封存</button>
+                  </div>
+              </div>
+          </div>
+      )}
+
     </div>
   );
 }

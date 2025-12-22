@@ -87,7 +87,7 @@ const PackingTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
   const themeColorHex = tab === 'SHOPPING' ? '#f472b6' : '#38bdf8';
 
   return (
-    <div className="h-full flex flex-col p-6 pb-24 bg-transparent transition-colors duration-300 relative">
+    <div className="h-full flex flex-col p-6 pb-0 bg-transparent transition-colors duration-300 relative">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-2xl font-black text-slate-800 dark:text-white">行李與裝備</h2>
         <span className="text-xs font-bold px-3 py-1 rounded-full transition-colors" style={{ color: themeColorHex, backgroundColor: `${themeColorHex}15` }}>
@@ -134,7 +134,7 @@ const PackingTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
       </div>
 
       {/* List Area */}
-      <div className="flex-grow overflow-y-auto no-scrollbar space-y-3 pb-24 pr-1 -mr-1">
+      <div className="flex-grow overflow-y-auto no-scrollbar space-y-3 pb-32 pr-1 -mr-1">
          {activeItems.length === 0 ? (
              <div className="h-full flex flex-col items-center justify-center opacity-40 -mt-10 animate-fade-in">
                 <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-4 ${tab === 'SHOPPING' ? 'bg-pink-100 text-pink-400 dark:bg-pink-500/10' : 'bg-sky-100 text-sky-400 dark:bg-sky-500/10'}`}>

@@ -95,7 +95,7 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
   };
 
   return (
-    <div className="h-full flex flex-col p-6 pb-24 bg-transparent transition-colors duration-300 relative">
+    <div className="h-full flex flex-col p-6 pb-0 bg-transparent transition-colors duration-300 relative">
         {/* Header Design matching Settings Page */}
         <div className="flex justify-between items-center mb-8 flex-shrink-0">
             <div className="w-10 h-10"></div> {/* Spacer for alignment */}
@@ -138,7 +138,7 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
         <div className="flex-grow w-full overflow-hidden flex flex-col">
             {activeTab === 'TOOLS' ? (
                 // Tools View - Locked Scrolling, auto-fit grid
-                <div className="h-full grid grid-cols-2 gap-4 pb-2">
+                <div className="h-full grid grid-cols-2 gap-4 pb-32">
                     <div onClick={() => handleOpenSearch(trip.destination, 'weather')} className="bg-gradient-to-br from-[#38bdf8] to-[#0284c7] rounded-[32px] p-4 text-white shadow-xl shadow-blue-500/20 cursor-pointer active:scale-95 transition-transform group flex flex-col items-center justify-center text-center relative overflow-hidden border border-white/10">
                         <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity">
                             <CloudIcon className="w-16 h-16 transform rotate-12" />
@@ -185,7 +185,7 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                 </div>
             ) : (
                 // Docs View - Scrollable
-                <div className="h-full overflow-y-auto no-scrollbar space-y-3 pb-24">
+                <div className="h-full overflow-y-auto no-scrollbar space-y-3 pb-32">
                     {documents.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full opacity-40">
                             <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-4">
