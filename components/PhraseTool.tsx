@@ -25,7 +25,7 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
       
       switch(site) {
           case 'news':
-              url = `https://www.google.com/search?q=${encodedQuery}+news&tbm=nws`;
+              url = `https://news.google.com/search?q=${encodedQuery}`;
               break;
           case 'weather':
               url = `https://www.google.com/search?q=${encodedQuery}+weather`;

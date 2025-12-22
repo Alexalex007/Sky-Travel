@@ -210,6 +210,10 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   const [modalMode, setModalMode] = useState<'PLAN' | 'FLIGHT'>('PLAN');
   const [isLocked, setIsLocked] = useState(true);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  
+  // Route Modal Drag State
+  const [draggedRouteIndex, setDraggedRouteIndex] = useState<number | null>(null);
+
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   
   const [routeLocations, setRouteLocations] = useState<Activity[]>([]);
@@ -486,13 +490,19 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
     setShowRouteModal(true);
   };
 
+  // Main List Drag Handlers
   const onDragStart = (e: React.DragEvent, index: number) => {
+    if (isLocked) {
+        e.preventDefault();
+        return;
+    }
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
+    // Set a transparent image to avoid default ghost if needed, or leave default
   };
 
   const onDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Necessary for drop to work
     e.dataTransfer.dropEffect = "move";
   };
 
@@ -508,6 +518,29 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
     updatedActivities[selectedDate] = newActivities;
     onUpdateTrip({ ...trip, activities: updatedActivities });
     setDraggedIndex(null);
+  };
+
+  // Route Modal Drag Handlers
+  const onRouteDragStart = (e: React.DragEvent, index: number) => {
+      setDraggedRouteIndex(index);
+      e.dataTransfer.effectAllowed = "move";
+  };
+
+  const onRouteDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+  };
+
+  const onRouteDrop = (e: React.DragEvent, dropIndex: number) => {
+      e.preventDefault();
+      if (draggedRouteIndex === null || draggedRouteIndex === dropIndex) return;
+
+      const newLocations = [...routeLocations];
+      const [draggedItem] = newLocations.splice(draggedRouteIndex, 1);
+      newLocations.splice(dropIndex, 0, draggedItem);
+      
+      setRouteLocations(newLocations);
+      setDraggedRouteIndex(null);
   };
 
   const openEditModal = (activity: Activity) => {
@@ -527,16 +560,6 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
         });
     }
     setShowAddModal(true);
-  };
-
-  const handleRouteOrderChange = (index: number, direction: 'up' | 'down') => {
-    const newLocations = [...routeLocations];
-    if (direction === 'up' && index > 0) {
-        [newLocations[index], newLocations[index - 1]] = [newLocations[index - 1], newLocations[index]];
-    } else if (direction === 'down' && index < newLocations.length - 1) {
-        [newLocations[index], newLocations[index + 1]] = [newLocations[index + 1], newLocations[index]];
-    }
-    setRouteLocations(newLocations);
   };
 
   const handleConfirmRoute = () => {
@@ -595,7 +618,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
           </div>
       </div>
 
-      {/* 2. Date Selector - Adjusted padding to move up */}
+      {/* 2. Date Selector - Adjusted padding to move up, REMOVED SCALE EFFECT to fix resizing issue */}
       <div className="pt-3 pb-2 pl-6 flex-shrink-0">
           <div className="flex gap-4 overflow-x-auto no-scrollbar py-2 snap-x pr-6">
             {dates.map(date => {
@@ -606,7 +629,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                     onClick={() => setSelectedDate(date)}
                     className={`snap-center flex-shrink-0 w-[4.5rem] h-[4.5rem] rounded-[24px] flex flex-col items-center justify-center gap-1 transition-all duration-300 ${
                     isSelected 
-                        ? 'bg-white text-slate-900 shadow-[0_0_20px_rgba(255,255,255,0.4)] dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] transform scale-105 z-10' 
+                        ? 'bg-white text-slate-900 shadow-[0_0_20px_rgba(255,255,255,0.4)] dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] shadow-lg z-10' 
                         : 'bg-white/60 dark:bg-[#111827] text-slate-500 border border-slate-200 dark:border-white/5'
                     }`}
                 >
@@ -725,15 +748,23 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                     </div>
                 ) : (
                     routeLocations.map((loc, idx) => (
-                        <div key={loc.id} className="bg-slate-50 dark:bg-[#1f2937] p-4 rounded-2xl flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                            <div className="w-6 h-6 rounded-full bg-[#38bdf8] text-white flex items-center justify-center text-xs font-bold">{idx + 1}</div>
+                        <div 
+                            key={loc.id} 
+                            className="bg-slate-50 dark:bg-[#1f2937] p-4 rounded-2xl flex items-center gap-3 border border-slate-200 dark:border-white/5 active:scale-[0.98] transition-all cursor-move"
+                            draggable
+                            onDragStart={(e) => onRouteDragStart(e, idx)}
+                            onDragOver={onRouteDragOver}
+                            onDrop={(e) => onRouteDrop(e, idx)}
+                        >
+                            <div className="w-6 h-6 rounded-full bg-[#38bdf8] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 cursor-grab active:cursor-grabbing">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                            </div>
                             <div className="flex-grow overflow-hidden">
                                 <p className="text-slate-800 dark:text-white font-bold truncate">{loc.location || loc.title}</p>
                                 <p className="text-slate-500 dark:text-slate-400 text-xs truncate">{loc.title}</p>
                             </div>
-                            <div className="flex flex-col gap-1">
-                                <button onClick={() => handleRouteOrderChange(idx, 'up')} disabled={idx === 0} className={`p-1 rounded bg-slate-200 dark:bg-white/5 ${idx === 0 ? 'opacity-30' : 'hover:bg-slate-300 dark:hover:bg-white/10'}`}><ChevronUpIcon className="w-4 h-4 text-slate-500 dark:text-slate-400" /></button>
-                                <button onClick={() => handleRouteOrderChange(idx, 'down')} disabled={idx === routeLocations.length - 1} className={`p-1 rounded bg-slate-200 dark:bg-white/5 ${idx === routeLocations.length - 1 ? 'opacity-30' : 'hover:bg-slate-300 dark:hover:bg-white/10'}`}><ChevronDownIcon className="w-4 h-4 text-slate-500 dark:text-slate-400" /></button>
+                            <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-white/10 text-slate-500 flex items-center justify-center text-xs font-bold">
+                                {idx + 1}
                             </div>
                         </div>
                     ))
@@ -747,6 +778,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       {showAddModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+             {/* ... Modal content unchanged ... */}
              <div className="flex justify-between items-center mb-6">
                  <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">{editingActivityId ? '編輯行程' : (modalMode === 'PLAN' ? '規劃行程' : '新增航班資訊')}</h3>
                  <button onClick={closeModal} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>

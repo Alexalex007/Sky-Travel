@@ -7,8 +7,20 @@ import ExpensesTool from './components/FoodTool';
 import ToolboxTool from './components/PhraseTool';
 import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, GlobeIcon, SparklesIcon, ClipboardDocumentListIcon, ArchiveBoxArrowDownIcon, TrashIcon, XMarkIcon, ArchiveIcon, RefreshIcon } from './components/Icons';
 
-const APP_VERSION = "v4.0.5";
+const APP_VERSION = "v4.0.6";
 const CHANGELOG_DATA = [
+    {
+        version: "v4.0.6",
+        date: "2025-12-22",
+        items: [
+            "優化：天數選擇器點擊時不再放大，保持介面穩定",
+            "優化：消費分析功能整合至總開支面板，介面更簡潔",
+            "修正：恢復行程卡拖拽排序功能",
+            "新增：路線規劃支援拖拽排序",
+            "修正：多城市行程編輯時的編號顯示位置",
+            "優化：當地新聞現在會直接跳轉至 Google News"
+        ]
+    },
     {
         version: "v4.0.5",
         date: "2025-12-22",
@@ -750,25 +762,25 @@ function App() {
              {tripType === 'Multi' && (
                  <div className="space-y-4 animate-fade-in-up">
                     {stops.map((stop, idx) => (
-                        <div key={stop.id} className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-[28px] p-5 shadow-xl mb-4">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-8 h-8 rounded-full bg-[#38bdf8] text-white flex items-center justify-center font-bold text-sm">{stop.id}</div>
+                        <div key={stop.id} className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-[28px] p-5 shadow-xl mb-4 flex gap-4">
+                            <div className="w-8 h-8 rounded-full bg-[#38bdf8] text-white flex items-center justify-center font-bold text-sm flex-shrink-0 mt-1">{stop.id}</div>
+                            <div className="flex-grow min-w-0">
                                 <input 
                                     type="text" 
-                                    className="bg-transparent w-full text-slate-900 dark:text-white font-bold text-lg focus:outline-none" 
+                                    className="bg-transparent w-full text-slate-900 dark:text-white font-bold text-lg focus:outline-none mb-4" 
                                     placeholder="城市名稱"
                                     value={stop.destination}
                                     onChange={e => handleStopChange(stop.id, 'destination', e.target.value)}
                                 />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">抵達日期</label>
-                                    <input type="date" className="w-full bg-slate-100 dark:bg-[#1f2937] rounded-xl p-3 text-sm text-slate-900 dark:text-white font-bold focus:outline-none" value={stop.startDate} onChange={e => handleStopChange(stop.id, 'startDate', e.target.value)} />
-                                </div>
-                                <div>
-                                    <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">離開日期</label>
-                                    <input type="date" className="w-full bg-slate-100 dark:bg-[#1f2937] rounded-xl p-3 text-sm text-slate-900 dark:text-white font-bold focus:outline-none" value={stop.endDate} onChange={e => handleStopChange(stop.id, 'endDate', e.target.value)} />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">抵達日期</label>
+                                        <input type="date" className="w-full bg-slate-100 dark:bg-[#1f2937] rounded-xl p-3 text-sm text-slate-900 dark:text-white font-bold focus:outline-none" value={stop.startDate} onChange={e => handleStopChange(stop.id, 'startDate', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">離開日期</label>
+                                        <input type="date" className="w-full bg-slate-100 dark:bg-[#1f2937] rounded-xl p-3 text-sm text-slate-900 dark:text-white font-bold focus:outline-none" value={stop.endDate} onChange={e => handleStopChange(stop.id, 'endDate', e.target.value)} />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -972,9 +984,9 @@ function App() {
                           <div className="space-y-4">
                               <p className="text-xs font-bold text-slate-500 ml-1">多城市行程細節</p>
                               {editStops.map((stop, idx) => (
-                                  <div key={stop.id} className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-[24px] p-4 relative">
-                                      <div className="absolute -left-2 top-4 w-6 h-6 rounded-full bg-[#a78bfa] text-white flex items-center justify-center font-bold text-xs shadow-md border-2 border-white dark:border-[#0f172a] z-10">{idx + 1}</div>
-                                      <div className="ml-2">
+                                  <div key={stop.id} className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-[24px] p-4 flex gap-4">
+                                      <div className="w-6 h-6 rounded-full bg-[#a78bfa] text-white flex items-center justify-center font-bold text-xs shadow-md border-2 border-white dark:border-[#0f172a] flex-shrink-0 mt-1">{idx + 1}</div>
+                                      <div className="flex-grow min-w-0">
                                           <input 
                                               type="text" 
                                               className="bg-transparent w-full text-slate-900 dark:text-white font-bold text-lg focus:outline-none mb-3" 

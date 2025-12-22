@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Trip, Expense, Budget } from '../types';
-import { PlusIcon, DiningIcon, BusIcon, ShoppingBagIcon, HomeIcon, TagIcon, ArrowsRightLeftIcon, CreditCardIcon, BanknotesIcon, TicketIcon, PlaneIcon, ShieldCheckIcon, ChevronDownIcon, ChevronLeftIcon, MapIcon, ChartPieIcon, XMarkIcon, CalendarIcon } from './Icons';
+import { PlusIcon, DiningIcon, BusIcon, ShoppingBagIcon, HomeIcon, TagIcon, ArrowsRightLeftIcon, CreditCardIcon, BanknotesIcon, TicketIcon, PlaneIcon, ShieldCheckIcon, ChevronDownIcon, ChevronLeftIcon, MapIcon, ChartPieIcon, XMarkIcon, CalendarIcon, WalletIcon } from './Icons';
 
 interface Props {
   trip: Trip;
@@ -132,6 +132,19 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
   const getCurrencyLabel = (code: string) => {
       const found = ALL_CURRENCIES.find(c => c.code === code);
       return found ? found.name : '';
+  };
+
+  const getCurrencySymbol = (code: string) => {
+    const symbols: Record<string, string> = {
+        'TWD': 'NT$', 'HKD': 'HK$', 'JPY': '¥', 'USD': '$', 'EUR': '€',
+        'KRW': '₩', 'CNY': '¥', 'GBP': '£', 'AUD': 'A$', 'CAD': 'C$',
+        'SGD': 'S$', 'CHF': 'Fr', 'THB': '฿', 'MYR': 'RM', 'VND': '₫',
+        'PHP': '₱', 'IDR': 'Rp', 'INR': '₹', 'NZD': 'NZ$', 'MOP': 'MOP$',
+        'TRY': '₺', 'RUB': '₽', 'BRL': 'R$', 'ZAR': 'R', 'MXN': '$',
+        'SAR': '﷼', 'AED': 'dh', 'EGP': 'E£', 'ILS': '₪', 'PLN': 'zł',
+        'CZK': 'Kč', 'HUF': 'Ft', 'SEK': 'kr', 'DKK': 'kr', 'NOK': 'kr'
+    };
+    return symbols[code] || '$';
   };
 
   // --- Calculations ---
@@ -408,7 +421,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                             currency: globalCurrency, 
                             title: '', 
                             category: '', 
-                            date: new Date().toISOString().split('T')[0],
+                            date: new Date().toISOString().split('T')[0], 
                             paymentMethod: 'cash' 
                         }); 
                     }}
@@ -427,39 +440,60 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
       
       {currentView === 'DASHBOARD' ? (
         <>
-            {/* 1. Header: Total Expenses */}
-            <div className="px-6 pt-6 pb-2 sticky top-0 z-30 pointer-events-none">
-                <div className="pointer-events-auto relative overflow-hidden rounded-[32px] p-5 shadow-xl shadow-blue-500/20 transition-all duration-300
-                    bg-gradient-to-br from-[#38bdf8] to-[#0284c7]
-                    dark:from-[#0f172a] dark:to-[#1e293b] dark:border dark:border-white/10"
-                >
-                     <div className="absolute -right-4 -top-12 h-40 w-40 rounded-full bg-white/10 blur-3xl pointer-events-none"></div>
-                     <div className="absolute -left-4 -bottom-12 h-40 w-40 rounded-full bg-black/5 dark:bg-blue-500/10 blur-3xl pointer-events-none"></div>
-
-                     <div className="relative z-10 flex flex-col gap-0.5">
-                         <div className="flex justify-between items-start">
-                            <span className="text-blue-50 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">總開支 TOTAL</span>
-                            
-                            <div className="relative">
-                                <select 
-                                    value={globalCurrency} 
-                                    onChange={e => setGlobalCurrency(e.target.value)}
-                                    className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-pointer"
-                                >
-                                    {ALL_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} {c.name}</option>)}
-                                </select>
-                                <div className="flex items-center gap-1.5 bg-white/20 dark:bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30 dark:border-white/10 transition-colors hover:bg-white/30">
-                                    <span className="font-bold text-xs tracking-wide text-white">{globalCurrency}</span>
-                                    <ChevronDownIcon className="w-3 h-3 text-white/80" />
-                                </div>
+            {/* 1. Header: Total Expenses & Analysis Button - Split into two */}
+            <div className="px-6 pt-6 pb-2 sticky top-0 z-30 pointer-events-none grid grid-cols-[1.4fr_1fr] gap-3">
+                
+                {/* Left: Total Expenses Card */}
+                <div className="pointer-events-auto relative overflow-hidden rounded-[28px] p-4 shadow-lg shadow-blue-500/20 transition-all duration-300 bg-gradient-to-br from-[#38bdf8] to-[#0284c7] dark:from-[#0f172a] dark:to-[#1e293b] dark:border dark:border-white/10 flex flex-col justify-between group">
+                     {/* Background Decor */}
+                     <div className="absolute -right-4 -top-12 h-32 w-32 rounded-full bg-white/10 blur-3xl pointer-events-none"></div>
+                     
+                     {/* Header Row */}
+                     <div className="flex justify-between items-start z-10">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center backdrop-blur-sm">
+                                <WalletIcon className="w-4 h-4 text-white" />
                             </div>
-                         </div>
-                         
-                         <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-sm mt-1">
-                            {Math.round(displayedTotalExpenses).toLocaleString()}
-                         </h1>
+                            <span className="text-blue-50 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">總開支</span>
+                        </div>
+
+                        {/* Currency Selector */}
+                        <div className="relative pointer-events-auto">
+                            <select 
+                                value={globalCurrency} 
+                                onChange={e => setGlobalCurrency(e.target.value)}
+                                className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-pointer"
+                            >
+                                {ALL_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} {c.name}</option>)}
+                            </select>
+                            <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full border border-white/30 hover:bg-white/30 transition-colors">
+                                <span className="font-bold text-[10px] text-white">{globalCurrency}</span>
+                                <ChevronDownIcon className="w-2.5 h-2.5 text-white/80" />
+                            </div>
+                        </div>
+                     </div>
+                     
+                     {/* Amount Row */}
+                     <div className="z-10 mt-3 flex items-baseline gap-1">
+                        <span className="text-lg font-bold text-blue-100">{getCurrencySymbol(globalCurrency)}</span>
+                        <h1 className="text-2xl font-black tracking-tight text-white drop-shadow-sm truncate">
+                           {Math.round(displayedTotalExpenses).toLocaleString()}
+                        </h1>
                      </div>
                 </div>
+
+                {/* Right: Analysis Stats Button (Restored Purple Theme) */}
+                <button 
+                    onClick={() => setActiveModal('STATS')}
+                    className="pointer-events-auto relative overflow-hidden rounded-[28px] p-4 shadow-lg shadow-purple-500/20 transition-all duration-300 bg-gradient-to-br from-violet-500 to-fuchsia-600 hover:opacity-90 active:scale-95 flex flex-col items-center justify-center gap-2 group"
+                >
+                    <div className="absolute -left-4 -bottom-12 h-32 w-32 rounded-full bg-white/20 blur-3xl pointer-events-none group-hover:bg-white/30 transition-colors"></div>
+                    
+                    <div className="w-10 h-10 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white relative z-10 backdrop-blur-sm">
+                        <ChartPieIcon className="w-5 h-5" />
+                    </div>
+                    <span className="text-white font-bold text-sm tracking-wide relative z-10">消費分析</span>
+                </button>
             </div>
 
             <div className="flex-grow overflow-y-auto px-6 pb-40 space-y-6 no-scrollbar pt-2">
@@ -503,20 +537,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                     </div>
                 </div>
 
-                {/* 3. Analysis Button */}
-                <button 
-                    onClick={() => setActiveModal('STATS')}
-                    className="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 p-1 rounded-[32px] shadow-lg shadow-purple-500/20 group active:scale-95 transition-transform"
-                >
-                    <div className="bg-white/95 dark:bg-[#1f2937]/95 backdrop-blur-md rounded-[28px] p-4 flex items-center justify-center gap-3 h-16 group-hover:bg-opacity-90 transition-all">
-                        <div className="w-10 h-10 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-500 dark:text-violet-300 flex items-center justify-center">
-                            <ChartPieIcon className="w-5 h-5" />
-                        </div>
-                        <span className="font-black text-slate-800 dark:text-white text-lg tracking-wide">查看消費分析報表</span>
-                    </div>
-                </button>
-
-                {/* 4. Quick Access Tabs */}
+                {/* 3. Quick Access Tabs (Removed separate analysis button, moved up) */}
                 <div className="grid grid-cols-2 gap-3">
                     <button 
                         onClick={() => setCurrentView('PRE_TRIP')}
@@ -544,7 +565,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                     </button>
                 </div>
 
-                {/* 5. Real-time Calculator */}
+                {/* 4. Real-time Calculator */}
                 <div className="bg-white/60 dark:bg-[#1e293b]/40 border border-white/50 dark:border-white/10 rounded-[32px] p-6 shadow-lg dark:shadow-none transition-colors duration-300">
                     <div className="flex items-center gap-2 mb-4 text-[#38bdf8]">
                         <ArrowsRightLeftIcon className="w-5 h-5" />
@@ -750,6 +771,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
             {(activeModal === 'ADD_PRE' || activeModal === 'ADD_ON') && (
                 <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm sm:p-4 animate-fade-in">
                     <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] border-t sm:border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col animate-slide-up max-h-[90vh]">
+                        {/* ... Modal content identical to previous, just context preserved ... */}
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">
                                 {editingId ? '編輯消費項目' : (activeModal === 'ADD_PRE' ? '新增行前開支' : '新增旅途消費')}
@@ -820,7 +842,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                                 </div>
                             </div>
 
-                            {/* Premium Glass Sliding Payment Method Toggle - Desaturated Glass */}
+                            {/* Premium Glass Sliding Payment Method Toggle */}
                             <div>
                                 <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">付款方式</label>
                                 <div className="bg-slate-100/50 dark:bg-white/5 p-1.5 rounded-2xl flex relative h-14 items-center backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-inner">
