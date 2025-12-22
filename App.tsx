@@ -7,8 +7,17 @@ import ExpensesTool from './components/FoodTool';
 import ToolboxTool from './components/PhraseTool';
 import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, GlobeIcon, SparklesIcon, ClipboardDocumentListIcon, ArchiveBoxArrowDownIcon, TrashIcon, XMarkIcon, ArchiveIcon, RefreshIcon } from './components/Icons';
 
-const APP_VERSION = "v4.0.4";
+const APP_VERSION = "v4.0.5";
 const CHANGELOG_DATA = [
+    {
+        version: "v4.0.5",
+        date: "2025-12-22",
+        items: [
+            "優化：調整設定頁面視覺，移除底部模糊遮罩",
+            "優化：行程頁面 Header 全新設計，支援多城市動態顯示",
+            "新增：多城市行程中，轉場日會自動顯示「出發地 → 目的地」"
+        ]
+    },
     {
         version: "v4.0.4",
         date: "2025-12-21",
@@ -506,6 +515,9 @@ function App() {
   // Bottom Nav Setup
   const tabs = [Tab.ITINERARY, Tab.EXPENSES, Tab.PACKING, Tab.TOOLBOX, Tab.SETTINGS];
   const activeIndex = tabs.indexOf(activeTab);
+  
+  // Logic to determine if blur should be shown (Not on Toolbox OR Settings)
+  const showBottomBlur = activeTab !== Tab.TOOLBOX && activeTab !== Tab.SETTINGS;
 
   if (view === 'HOME') {
     return (
@@ -600,8 +612,6 @@ function App() {
           
           {savedTrip ? (
              <div className="space-y-4 animate-fade-in-up">
-                 <p className="text-slate-500 text-sm font-bold tracking-wide">歡迎回來！準備好繼續冒險了嗎？</p>
-                 
                  {/* Saved Trip Card */}
                  <div 
                     onClick={handleContinueTrip}
@@ -641,10 +651,6 @@ function App() {
              </div>
           ) : (
              <>
-                <p className="text-slate-500 max-w-xs mx-auto text-sm font-bold tracking-wide leading-relaxed">
-                    極簡 • 純粹 • 星際漫遊<br/>
-                    您的下一代旅遊計畫助手
-                </p>
                 <button 
                     onClick={() => setView('CREATE')}
                     className="group relative inline-flex items-center justify-center px-8 py-5 font-black text-white transition-all duration-200 bg-[#38bdf8] rounded-2xl focus:outline-none hover:bg-[#0ea5e9] w-full max-w-[240px] shadow-[0_10px_40px_rgba(56,189,248,0.4)] mt-12 text-lg active:scale-95"
@@ -809,7 +815,7 @@ function App() {
       </div>
 
       {/* Global Bottom Gradient Mask for Seamless Scrolling */}
-      <div className={`fixed bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#f0f9ff] via-[#f0f9ff]/90 to-transparent dark:from-[#05080F] dark:via-[#05080F]/90 z-40 pointer-events-none ${activeTab === Tab.TOOLBOX ? '' : 'backdrop-blur-[2px]'}`}></div>
+      <div className={`fixed bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#f0f9ff] via-[#f0f9ff]/90 to-transparent dark:from-[#05080F] dark:via-[#05080F]/90 z-40 pointer-events-none ${showBottomBlur ? 'backdrop-blur-[2px]' : ''}`}></div>
 
       {/* Floating Bottom Navigation - REFINED STYLE FOR PERFECT BLENDING */}
       <div className="fixed bottom-6 left-6 right-6 h-[80px] bg-white/40 dark:bg-[#05080F]/40 backdrop-blur-2xl rounded-[32px] border border-white/20 dark:border-white/10 flex items-center px-2 shadow-2xl z-50 transition-colors duration-300">

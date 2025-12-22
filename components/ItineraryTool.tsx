@@ -317,6 +317,35 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       return `DAY ${diffDays + 1}`;
   };
 
+  // Logic to determine what to show in the Header based on Multi-city logic
+  const getHeaderLocation = () => {
+      // Single Trip
+      if (trip.type === 'Single' || !trip.stops) {
+          return <span className="truncate max-w-[200px]">{trip.destination.split(',')[0]}</span>;
+      }
+
+      // Multi Trip Transition Check
+      // Check if selectedDate is a transition day (End of Stop A AND Start of Stop B)
+      for (let i = 0; i < trip.stops.length - 1; i++) {
+          const currentStop = trip.stops[i];
+          const nextStop = trip.stops[i+1];
+          
+          if (selectedDate === currentStop.endDate && selectedDate === nextStop.startDate) {
+              return (
+                  <div className="flex items-center gap-2 overflow-hidden">
+                      <span className="truncate max-w-[100px]">{currentStop.destination}</span>
+                      <ArrowLongRightIcon className="w-5 h-5 flex-shrink-0 animate-pulse text-[#38bdf8]" />
+                      <span className="truncate max-w-[100px]">{nextStop.destination}</span>
+                  </div>
+              );
+          }
+      }
+
+      // If not transition, find current stop
+      const activeStop = trip.stops.find(s => selectedDate >= s.startDate && selectedDate <= s.endDate);
+      return <span className="truncate max-w-[200px]">{activeStop ? activeStop.destination : trip.destination.split(',')[0]}</span>;
+  };
+
   const closeModal = () => {
     setShowAddModal(false);
     setEditingActivityId(null);
@@ -502,29 +531,34 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
             {/* Left: Info */}
             <div className="flex flex-col gap-1.5 w-full">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)] flex-shrink-0">
                         <MapIcon className="w-4 h-4 text-slate-800 dark:text-white" />
                     </div>
-                    <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-wide leading-none drop-shadow-lg truncate max-w-[200px]">{trip.destination.split(',')[0]}</h1>
+                    {/* Updated Header Title Logic and Sizing */}
+                    <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-wide leading-none drop-shadow-lg">
+                        {getHeaderLocation()}
+                    </h1>
                 </div>
                 <div className="flex items-center gap-2 pl-1">
-                    <span className="bg-white/40 dark:bg-white/20 text-slate-900 dark:text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider backdrop-blur-sm shadow-sm">{getDayNumber(selectedDate)}</span>
-                    <span className="text-slate-600 dark:text-blue-100 text-xs font-mono font-bold tracking-wide opacity-80">{selectedDate}</span>
+                    <span className="bg-white/40 dark:bg-white/10 text-slate-900 dark:text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider backdrop-blur-sm shadow-sm border border-white/10">{getDayNumber(selectedDate)}</span>
+                    <span className="text-slate-600 dark:text-blue-100 text-sm font-mono font-bold tracking-wide opacity-80">{selectedDate}</span>
                 </div>
             </div>
 
-            {/* Right: Weather Widget */}
+            {/* Right: Weather Widget - Updated Style */}
             <button 
                 onClick={handleWeatherSearch}
-                className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-yellow-400/20 to-orange-500/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-yellow-500 dark:text-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.2)] active:scale-95 transition-transform flex-shrink-0"
+                className="w-[68px] h-[68px] rounded-[24px] bg-slate-900/40 backdrop-blur-md border border-white/10 flex flex-col items-center justify-center text-yellow-300 shadow-xl active:scale-95 transition-transform flex-shrink-0 relative overflow-hidden group"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 mb-0.5 relative z-10"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" strokeOpacity="0.5" /></svg>
             </button>
           </div>
       </div>
 
-      {/* 2. Date Selector */}
-      <div className="pt-6 pb-2 pl-6 flex-shrink-0">
+      {/* 2. Date Selector - Adjusted padding to move up */}
+      <div className="pt-3 pb-2 pl-6 flex-shrink-0">
           <div className="flex gap-4 overflow-x-auto no-scrollbar py-2 snap-x pr-6">
             {dates.map(date => {
                 const isSelected = selectedDate === date;
