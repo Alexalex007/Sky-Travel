@@ -1,6 +1,13 @@
 
 export type TripType = 'Single' | 'Multi';
 
+export interface Stop {
+  id: number;
+  destination: string;
+  startDate: string;
+  endDate: string;
+}
+
 export interface Budget {
   amount: number;
   currency: string; // e.g., 'HKD', 'JPY'
@@ -22,6 +29,7 @@ export interface Trip {
   startDate: string; // YYYY-MM-DD
   endDate: string;   // YYYY-MM-DD
   type: TripType;
+  stops?: Stop[]; // Array of stops for Multi-city trips
   activities: Record<string, Activity[]>; // Date string key -> Activities
   expenses: Expense[];
   packingList: PackingItem[];

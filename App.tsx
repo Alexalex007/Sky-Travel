@@ -1,14 +1,23 @@
 
 import React, { useState, useEffect } from 'react';
-import { Trip, Tab, TripType } from './types';
+import { Trip, Tab, TripType, Stop } from './types';
 import ItineraryTool from './components/ItineraryTool';
 import PackingTool from './components/PackingTool';
 import ExpensesTool from './components/FoodTool';
 import ToolboxTool from './components/PhraseTool';
 import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, GlobeIcon, SparklesIcon, ClipboardDocumentListIcon, ArchiveBoxArrowDownIcon, TrashIcon, XMarkIcon, ArchiveIcon, RefreshIcon } from './components/Icons';
 
-const APP_VERSION = "v4.0.3";
+const APP_VERSION = "v4.0.4";
 const CHANGELOG_DATA = [
+    {
+        version: "v4.0.4",
+        date: "2025-12-21",
+        items: [
+            "修正：修復多城市行程「新增下一站」按鈕失效問題",
+            "優化：修改行程頁面現在能正確顯示與編輯多城市行程細節",
+            "優化：移除常用工具頁面底部的模糊遮罩層"
+        ]
+    },
     {
         version: "v4.0.3",
         date: "2025-12-21",
@@ -43,16 +52,6 @@ const CHANGELOG_DATA = [
             "優化：設定頁面介面與更新日誌",
             "優化：分享功能"
         ]
-    },
-    {
-        version: "v3.8.0",
-        date: "2025-11-15",
-        items: [
-            "新增：黑暗模式支援",
-            "新增：旅遊百寶箱 (天氣、新聞、匯率)",
-            "優化：底部導航列視覺",
-            "修正：部分已知的錯誤"
-        ]
     }
 ];
 
@@ -76,7 +75,10 @@ function App() {
       destination: string;
       startDate: string;
       endDate: string;
-  }>({ name: '', destination: '', startDate: '', endDate: '' });
+      type: TripType;
+  }>({ name: '', destination: '', startDate: '', endDate: '', type: 'Single' });
+  
+  const [editStops, setEditStops] = useState<Stop[]>([]);
 
   // Initialize dark mode from local storage
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -105,13 +107,6 @@ function App() {
   const [singleEndDate, setSingleEndDate] = useState('');
 
   // Multi-city stops state
-  interface Stop {
-    id: number;
-    destination: string;
-    startDate: string;
-    endDate: string;
-  }
-
   const [stops, setStops] = useState<Stop[]>([
     { id: 1, destination: '', startDate: '', endDate: '' }
   ]);
@@ -183,20 +178,72 @@ function App() {
           name: tripData.name,
           destination: tripData.destination,
           startDate: tripData.startDate,
-          endDate: tripData.endDate
+          endDate: tripData.endDate,
+          type: tripData.type
       });
+      // Initialize edit stops if available
+      if (tripData.type === 'Multi' && tripData.stops) {
+          setEditStops(JSON.parse(JSON.stringify(tripData.stops)));
+      } else {
+          setEditStops([]);
+      }
       setIsEditTripOpen(true);
+  };
+
+  const handleEditStopChange = (id: number, field: keyof Stop, value: string) => {
+      setEditStops(prev => {
+          const newStops = prev.map(s => s.id === id ? { ...s, [field]: value } : s);
+          if (field === 'endDate') {
+              const idx = newStops.findIndex(s => s.id === id);
+              if (idx !== -1 && idx < newStops.length - 1) {
+                  newStops[idx + 1].startDate = value;
+              }
+          }
+          return newStops;
+      });
+  };
+
+  const handleAddEditStop = () => {
+      if (editStops.length >= 6) return;
+      const lastStop = editStops[editStops.length - 1];
+      setEditStops([
+          ...editStops,
+          { 
+              id: editStops.length + 1, 
+              destination: '', 
+              startDate: lastStop ? lastStop.endDate : '', 
+              endDate: '' 
+          }
+      ]);
   };
 
   const handleConfirmEdit = () => {
       if (!tripData) return;
-      const updatedTrip = {
-          ...tripData,
-          name: editTripData.name,
-          destination: editTripData.destination,
-          startDate: editTripData.startDate,
-          endDate: editTripData.endDate
-      };
+      let updatedTrip = { ...tripData, name: editTripData.name };
+
+      if (tripData.type === 'Multi' && editStops.length > 0) {
+          // Reconstruct details from stops
+          const newDest = editStops.map(s => s.destination).join(' - ');
+          const newStart = editStops[0].startDate;
+          const newEnd = editStops[editStops.length - 1].endDate;
+          
+          updatedTrip = {
+              ...updatedTrip,
+              destination: newDest,
+              startDate: newStart,
+              endDate: newEnd,
+              stops: editStops
+          };
+      } else {
+          // Single trip or Legacy Multi trip update
+          updatedTrip = {
+              ...updatedTrip,
+              destination: editTripData.destination,
+              startDate: editTripData.startDate,
+              endDate: editTripData.endDate
+          };
+      }
+
       setTripData(updatedTrip);
       setIsEditTripOpen(false);
   };
@@ -240,7 +287,7 @@ function App() {
       setShowHomeSettings(false);
   };
 
-  // Logic to handle changing a stop's data
+  // Logic to handle changing a stop's data in Creation
   const handleStopChange = (id: number, field: keyof Stop, value: string) => {
     setStops(prevStops => {
       const newStops = prevStops.map(stop => {
@@ -314,6 +361,7 @@ function App() {
       startDate: finalStart,
       endDate: finalEnd,
       type: tripType,
+      stops: tripType === 'Multi' ? stops : undefined,
       activities: {},
       expenses: [],
       packingList: [],
@@ -719,7 +767,7 @@ function App() {
                             </div>
                         </div>
                     ))}
-                    <button onClick={handleAddStop} className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-[24px] text-slate-500 font-bold">+ 新增下一站</button>
+                    <button type="button" onClick={handleAddStop} className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-[24px] text-slate-500 font-bold">+ 新增下一站</button>
                  </div>
              )}
 
@@ -854,7 +902,7 @@ function App() {
       {/* 2. Edit Trip Modal */}
       {isEditTripOpen && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-              <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative animate-slide-up">
+              <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative animate-slide-up flex flex-col max-h-[90vh]">
                   <div className="flex justify-between items-center mb-6">
                       <h3 className="text-xl font-bold text-slate-800 dark:text-white">修改旅程資訊</h3>
                       <button onClick={() => setIsEditTripOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
@@ -862,7 +910,7 @@ function App() {
                       </button>
                   </div>
 
-                  <div className="space-y-4 mb-6">
+                  <div className="flex-grow overflow-y-auto no-scrollbar space-y-4 mb-6">
                       <div>
                           <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">旅程名稱</label>
                           <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
@@ -874,46 +922,81 @@ function App() {
                               />
                           </div>
                       </div>
-                      <div>
-                          <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">目的地</label>
-                          <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
-                              <input 
-                                  type="text" 
-                                  value={editTripData.destination}
-                                  onChange={e => setEditTripData({...editTripData, destination: e.target.value})}
-                                  className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg" 
-                              />
-                          </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                          <div>
-                              <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">抵達日期</label>
-                              <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-3">
-                                  <input 
-                                      type="date" 
-                                      value={editTripData.startDate}
-                                      onChange={e => setEditTripData({...editTripData, startDate: e.target.value})}
-                                      className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none text-sm" 
-                                  />
+
+                      {/* Conditional Rendering based on Trip Type */}
+                      {editTripData.type === 'Single' || editStops.length === 0 ? (
+                          <>
+                              <div>
+                                  <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">目的地</label>
+                                  <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
+                                      <input 
+                                          type="text" 
+                                          value={editTripData.destination}
+                                          onChange={e => setEditTripData({...editTripData, destination: e.target.value})}
+                                          className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg" 
+                                      />
+                                  </div>
                               </div>
-                          </div>
-                          <div>
-                              <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">離開日期</label>
-                              <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-3">
-                                  <input 
-                                      type="date" 
-                                      value={editTripData.endDate}
-                                      onChange={e => setEditTripData({...editTripData, endDate: e.target.value})}
-                                      className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none text-sm" 
-                                  />
+                              <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">抵達日期</label>
+                                      <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-3">
+                                          <input 
+                                              type="date" 
+                                              value={editTripData.startDate}
+                                              onChange={e => setEditTripData({...editTripData, startDate: e.target.value})}
+                                              className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none text-sm" 
+                                          />
+                                      </div>
+                                  </div>
+                                  <div>
+                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">離開日期</label>
+                                      <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-3">
+                                          <input 
+                                              type="date" 
+                                              value={editTripData.endDate}
+                                              onChange={e => setEditTripData({...editTripData, endDate: e.target.value})}
+                                              className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none text-sm" 
+                                          />
+                                      </div>
+                                  </div>
                               </div>
+                          </>
+                      ) : (
+                          <div className="space-y-4">
+                              <p className="text-xs font-bold text-slate-500 ml-1">多城市行程細節</p>
+                              {editStops.map((stop, idx) => (
+                                  <div key={stop.id} className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-[24px] p-4 relative">
+                                      <div className="absolute -left-2 top-4 w-6 h-6 rounded-full bg-[#a78bfa] text-white flex items-center justify-center font-bold text-xs shadow-md border-2 border-white dark:border-[#0f172a] z-10">{idx + 1}</div>
+                                      <div className="ml-2">
+                                          <input 
+                                              type="text" 
+                                              className="bg-transparent w-full text-slate-900 dark:text-white font-bold text-lg focus:outline-none mb-3" 
+                                              placeholder="城市名稱"
+                                              value={stop.destination}
+                                              onChange={e => handleEditStopChange(stop.id, 'destination', e.target.value)}
+                                          />
+                                          <div className="grid grid-cols-2 gap-3">
+                                              <div>
+                                                  <label className="text-slate-400 text-[10px] font-bold mb-1 block">抵達</label>
+                                                  <input type="date" className="w-full bg-white dark:bg-[#111827] rounded-xl p-2 text-xs text-slate-800 dark:text-slate-200 font-bold focus:outline-none border border-slate-200 dark:border-white/5" value={stop.startDate} onChange={e => handleEditStopChange(stop.id, 'startDate', e.target.value)} />
+                                              </div>
+                                              <div>
+                                                  <label className="text-slate-400 text-[10px] font-bold mb-1 block">離開</label>
+                                                  <input type="date" className="w-full bg-white dark:bg-[#111827] rounded-xl p-2 text-xs text-slate-800 dark:text-slate-200 font-bold focus:outline-none border border-slate-200 dark:border-white/5" value={stop.endDate} onChange={e => handleEditStopChange(stop.id, 'endDate', e.target.value)} />
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                              ))}
+                              <button type="button" onClick={handleAddEditStop} className="w-full py-3 border-2 border-dashed border-[#a78bfa]/30 text-[#a78bfa] rounded-2xl font-bold text-sm hover:bg-[#a78bfa]/5 transition-colors">+ 新增下一站</button>
                           </div>
-                      </div>
+                      )}
                   </div>
 
                   <button 
                       onClick={handleConfirmEdit}
-                      className="w-full py-4 bg-[#38bdf8] text-white font-black text-lg rounded-3xl hover:bg-[#0ea5e9] shadow-lg shadow-blue-500/30 transition-colors"
+                      className="w-full py-4 bg-[#38bdf8] text-white font-black text-lg rounded-3xl hover:bg-[#0ea5e9] shadow-lg shadow-blue-500/30 transition-colors mt-auto"
                   >
                       儲存變更
                   </button>
