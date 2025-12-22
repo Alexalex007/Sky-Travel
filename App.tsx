@@ -610,10 +610,15 @@ function App() {
             )}
         </div>
 
-        {/* Nebula Background */}
-        <div className="absolute top-0 left-0 w-full h-full nebula-bg pointer-events-none opacity-50"></div>
+        {/* Dynamic Home Background */}
+        <div className="absolute inset-0 w-full h-full home-bg pointer-events-none overflow-hidden">
+            <div className="home-orb orb-1"></div>
+            <div className="home-orb orb-2"></div>
+            <div className="home-orb orb-3"></div>
+            <div className="home-stars"></div>
+        </div>
 
-        <div className="z-10 text-center space-y-8 w-full max-w-sm">
+        <div className="z-10 text-center space-y-8 w-full max-w-sm relative">
           <div className="w-28 h-28 bg-[#38bdf8] rounded-[32px] flex items-center justify-center shadow-[0_0_50px_rgba(56,189,248,0.3)] mx-auto transform -rotate-12 border border-white/50 backdrop-blur-sm">
             <PlaneIcon className="w-14 h-14 text-white" />
           </div>
