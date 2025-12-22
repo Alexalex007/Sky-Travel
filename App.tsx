@@ -514,8 +514,11 @@ function App() {
         {activeTab === Tab.SETTINGS && <SettingsView />}
       </div>
 
-      {/* Floating Bottom Navigation - FIXED POSITION */}
-      <div className="fixed bottom-6 left-6 right-6 h-[80px] bg-white/90 dark:bg-[#05080F]/90 backdrop-blur-xl rounded-[32px] border border-slate-200 dark:border-white/5 flex items-center px-2 shadow-2xl z-50 transition-colors duration-300">
+      {/* Global Bottom Gradient Mask for Seamless Scrolling */}
+      <div className="fixed bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#f0f9ff] via-[#f0f9ff]/90 to-transparent dark:from-[#05080F] dark:via-[#05080F]/90 z-40 pointer-events-none backdrop-blur-[2px]"></div>
+
+      {/* Floating Bottom Navigation - REFINED STYLE FOR PERFECT BLENDING */}
+      <div className="fixed bottom-6 left-6 right-6 h-[80px] bg-white/40 dark:bg-[#05080F]/40 backdrop-blur-2xl rounded-[32px] border border-white/20 dark:border-white/10 flex items-center px-2 shadow-2xl z-50 transition-colors duration-300">
         {/* Animated Background Indicator */}
         <div 
             className="absolute h-14 w-14 rounded-2xl bg-[#38bdf8] shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] top-1/2 -translate-y-1/2 -translate-x-1/2 z-0"

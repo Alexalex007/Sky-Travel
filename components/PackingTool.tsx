@@ -193,8 +193,8 @@ const PackingTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
          )}
       </div>
 
-      {/* Floating Input Area */}
-      <div className="absolute bottom-6 left-6 right-6 z-20 flex gap-3 items-center">
+      {/* Floating Input Area - Fixed above nav & gradient */}
+      <div className="fixed bottom-[120px] left-6 right-6 z-[60] flex gap-3 items-center">
           
           {/* Left: Question/Unsure Button */}
           <button

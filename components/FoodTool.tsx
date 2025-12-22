@@ -270,7 +270,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
 
   const renderListView = (viewMode: 'PRE_TRIP' | 'ON_TRIP') => {
       const isPre = viewMode === 'PRE_TRIP';
-      const title = isPre ? '行前準備' : '旅途開支';
+      const title = isPre ? '行前準備' : '旅途消費';
       const listExpenses = isPre ? preTripExpenses : onTripExpenses;
       const totalAmount = isPre ? preTripTotalBase : onTripTotalBase;
       const categories = isPre ? PRE_TRIP_CATEGORIES : ON_TRIP_CATEGORIES;
@@ -326,11 +326,11 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                 )}
             </div>
 
-            {/* Bottom Button */}
-            <div className="fixed bottom-[100px] left-0 right-0 px-6 pb-6 pt-10 bg-gradient-to-t from-white via-white/80 to-transparent dark:from-[#05080F] dark:via-[#05080F]/80 pointer-events-none z-20">
+            {/* Bottom Button - Fixed and elevated above global gradient */}
+            <div className="fixed bottom-[120px] left-0 right-0 px-6 z-[60] pointer-events-none flex justify-center">
                  <button 
                     onClick={() => setActiveModal(isPre ? 'ADD_PRE' : 'ADD_ON')}
-                    className="w-full py-4 bg-[#38bdf8] text-white font-black text-lg rounded-3xl hover:bg-[#0ea5e9] shadow-lg shadow-blue-500/30 transition-colors pointer-events-auto flex items-center justify-center gap-2 active:scale-95 transform duration-100"
+                    className="w-full py-4 bg-[#38bdf8] text-white font-black text-lg rounded-3xl hover:bg-[#0ea5e9] shadow-lg shadow-blue-500/30 transition-colors pointer-events-auto flex items-center justify-center gap-2 active:scale-95 transform duration-100 max-w-sm"
                  >
                      <PlusIcon className="w-5 h-5" />
                      新增{title}
@@ -486,7 +486,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                         </div>
                         <div className="text-left">
                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">ON-TRIP</p>
-                            <p className="text-slate-900 dark:text-white font-bold text-sm">旅途開支</p>
+                            <p className="text-slate-900 dark:text-white font-bold text-sm">旅途消費</p>
                         </div>
                     </button>
                 </div>
@@ -708,7 +708,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                     <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] border-t sm:border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col animate-slide-up max-h-[90vh]">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">
-                                {activeModal === 'ADD_PRE' ? '新增行前開支' : '新增旅途開支'}
+                                {activeModal === 'ADD_PRE' ? '新增行前開支' : '新增旅途消費'}
                             </h3>
                             <button onClick={() => setActiveModal('NONE')} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -724,7 +724,6 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                                         <input 
                                             type="number" 
                                             placeholder="0" 
-                                            autoFocus
                                             value={newExpense.amount}
                                             onChange={e => setNewExpense({...newExpense, amount: e.target.value})}
                                             className="w-full bg-transparent text-slate-900 dark:text-white font-black text-3xl text-left pl-2 focus:outline-none placeholder-slate-400 dark:placeholder-slate-700"
