@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Trip, DocumentItem } from '../types';
-import { LinkIcon, DocumentTextIcon, ArchiveIcon, PlusIcon, TrashIcon, PhotoIcon, PaperClipIcon, SparklesIcon, TicketIcon, MapIcon, CloudIcon, NewspaperIcon } from './Icons';
+import { LinkIcon, DocumentTextIcon, ArchiveIcon, PlusIcon, TrashIcon, PhotoIcon, PaperClipIcon, SparklesIcon, TicketIcon, MapIcon, CloudIcon, NewspaperIcon, XMarkIcon } from './Icons';
 
 interface Props {
   trip: Trip;
@@ -11,6 +11,7 @@ interface Props {
 const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
   const [activeTab, setActiveTab] = useState<'TOOLS' | 'DOCS'>('TOOLS');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showCitySelect, setShowCitySelect] = useState(false); // New state for city selector
   const [newDoc, setNewDoc] = useState<{ title: string; type: 'link' | 'note' | 'file'; content: string }>({
       title: '',
       type: 'link',
@@ -40,6 +41,14 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
               url = `https://www.google.com/search?q=${encodedQuery}`;
       }
       window.open(url, '_blank');
+  };
+
+  const handleWeatherClick = () => {
+      if (trip.type === 'Multi' && trip.stops && trip.stops.length > 0) {
+          setShowCitySelect(true);
+      } else {
+          handleOpenSearch(trip.destination, 'weather');
+      }
   };
 
   const handleAddDocument = () => {
@@ -139,7 +148,7 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
             {activeTab === 'TOOLS' ? (
                 // Tools View - Locked Scrolling, auto-fit grid
                 <div className="h-full grid grid-cols-2 gap-4 pb-32">
-                    <div onClick={() => handleOpenSearch(trip.destination, 'weather')} className="bg-gradient-to-br from-[#38bdf8] to-[#0284c7] rounded-[32px] p-4 text-white shadow-xl shadow-blue-500/20 cursor-pointer active:scale-95 transition-transform group flex flex-col items-center justify-center text-center relative overflow-hidden border border-white/10">
+                    <div onClick={handleWeatherClick} className="bg-gradient-to-br from-[#38bdf8] to-[#0284c7] rounded-[32px] p-4 text-white shadow-xl shadow-blue-500/20 cursor-pointer active:scale-95 transition-transform group flex flex-col items-center justify-center text-center relative overflow-hidden border border-white/10">
                         <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity">
                             <CloudIcon className="w-16 h-16 transform rotate-12" />
                         </div>
@@ -231,6 +240,49 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
             </button>
         )}
 
+        {/* --- Modals --- */}
+
+        {/* 1. City Selection Modal (For Weather in Multi-city) */}
+        {showCitySelect && trip.stops && (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl animate-slide-up">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <CloudIcon className="w-6 h-6 text-[#38bdf8]" />
+                            選擇城市
+                        </h3>
+                        <button onClick={() => setShowCitySelect(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+                    
+                    <div className="space-y-3 max-h-[60vh] overflow-y-auto no-scrollbar">
+                        {trip.stops.map((stop, idx) => (
+                            <button
+                                key={stop.id}
+                                onClick={() => {
+                                    handleOpenSearch(stop.destination, 'weather');
+                                    setShowCitySelect(false);
+                                }}
+                                className="w-full bg-slate-50 dark:bg-[#1e293b]/50 p-4 rounded-2xl flex items-center justify-between border border-slate-200 dark:border-white/5 hover:bg-white dark:hover:bg-[#1e293b] hover:border-[#38bdf8] dark:hover:border-[#38bdf8] transition-all group active:scale-[0.98]"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-[#38bdf8]/10 text-[#38bdf8] flex items-center justify-center font-bold text-sm">
+                                        {idx + 1}
+                                    </div>
+                                    <span className="font-bold text-slate-800 dark:text-white">{stop.destination}</span>
+                                </div>
+                                <div className="text-slate-400 group-hover:text-[#38bdf8]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* 2. Add Doc Modal */}
         {showAddModal && (
             <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
                 <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl animate-slide-up">

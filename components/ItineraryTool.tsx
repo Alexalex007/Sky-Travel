@@ -194,7 +194,7 @@ const ActivityCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: s
                     style={{ color: typeColor.hex }}
                 >
                     {activity.type === 'sightseeing' && <CameraIcon className="w-5 h-5" />}
-                    {activity.type === 'food' && <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>}
+                    {activity.type === 'food' && <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.008v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>}
                     {activity.type === 'transport' && <BusIcon className="w-5 h-5" />}
                 </button>
             </div>
@@ -350,6 +350,29 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       return <span className="truncate">{activeStop ? activeStop.destination : trip.destination.split(',')[0]}</span>;
   };
 
+  // Determine the exact city string for weather search
+  const getWeatherCity = () => {
+      // Single Trip
+      if (trip.type === 'Single' || !trip.stops || trip.stops.length === 0) {
+          return trip.destination;
+      }
+
+      // Multi Trip Logic
+      for (let i = 0; i < trip.stops.length - 1; i++) {
+          const currentStop = trip.stops[i];
+          const nextStop = trip.stops[i+1];
+          
+          // If selectedDate is a transition day, search the ARRIVAL city (nextStop)
+          if (selectedDate === currentStop.endDate && selectedDate === nextStop.startDate) {
+              return nextStop.destination;
+          }
+      }
+
+      // Normal day: find active stop
+      const activeStop = trip.stops.find(s => selectedDate >= s.startDate && selectedDate <= s.endDate);
+      return activeStop ? activeStop.destination : trip.destination;
+  };
+
   const closeModal = () => {
     setShowAddModal(false);
     setEditingActivityId(null);
@@ -480,7 +503,9 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   };
 
   const handleWeatherSearch = () => {
-    const query = encodeURIComponent(`${trip.destination} weather`);
+    // Use the dynamic city based on current logic (transition day sensitive)
+    const targetCity = getWeatherCity();
+    const query = encodeURIComponent(`${targetCity} weather`);
     window.open(`https://www.google.com/search?q=${query}`, '_blank');
   };
 
