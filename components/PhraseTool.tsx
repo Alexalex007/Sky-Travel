@@ -111,9 +111,9 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
         </div>
 
         {/* Premium Glass Sliding Toggle - Fixed Width to prevent jump */}
-        <div className="w-full bg-slate-100/50 dark:bg-white/5 p-1.5 rounded-2xl flex relative mb-8 h-14 items-center backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-inner flex-shrink-0">
+        <div className="w-full bg-slate-100/50 dark:bg-white/5 p-1.5 rounded-2xl flex relative mb-8 h-14 items-center border border-white/20 dark:border-white/10 shadow-inner flex-shrink-0">
             <div 
-                className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg border border-white/20 backdrop-blur-md
+                className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg border border-white/20
                 ${activeTab === 'TOOLS' 
                     ? 'left-1.5 bg-gradient-to-br from-indigo-500/80 to-purple-500/80 shadow-indigo-500/20' 
                     : 'left-[50%] bg-gradient-to-br from-slate-700/80 to-slate-900/80 shadow-slate-500/20'}
@@ -143,7 +143,7 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                         <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity">
                             <CloudIcon className="w-16 h-16 transform rotate-12" />
                         </div>
-                        <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 shadow-inner border border-white/20">
+                        <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center mb-3 shadow-inner border border-white/20">
                             <CloudIcon className="w-7 h-7 text-white" />
                         </div>
                         <h3 className="font-black text-lg mb-1 tracking-wide">當地天氣</h3>
@@ -154,7 +154,7 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                         <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity">
                             <NewspaperIcon className="w-16 h-16 transform -rotate-12" />
                         </div>
-                        <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 shadow-inner border border-white/20">
+                        <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center mb-3 shadow-inner border border-white/20">
                             <NewspaperIcon className="w-7 h-7 text-white" />
                         </div>
                         <h3 className="font-black text-lg mb-1 tracking-wide">最新新聞</h3>
@@ -165,7 +165,7 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                         <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity">
                             <TicketIcon className="w-16 h-16 transform rotate-6" />
                         </div>
-                         <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 shadow-inner border border-white/20">
+                         <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center mb-3 shadow-inner border border-white/20">
                             <TicketIcon className="w-7 h-7 text-white" />
                         </div>
                         <h3 className="font-black text-lg mb-1 tracking-wide">Klook</h3>
@@ -176,7 +176,7 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                          <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity">
                             <MapIcon className="w-16 h-16 transform -rotate-6" />
                         </div>
-                        <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 shadow-inner border border-white/20">
+                        <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center mb-3 shadow-inner border border-white/20">
                             <MapIcon className="w-7 h-7 text-white" />
                         </div>
                         <h3 className="font-black text-lg mb-1 tracking-wide">KKday</h3>
@@ -198,7 +198,7 @@ const ToolboxTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                             <div 
                                 key={doc.id} 
                                 onClick={() => handleDocClick(doc)} 
-                                className="bg-white/60 dark:bg-[#1e293b]/60 border border-slate-200 dark:border-white/10 p-4 rounded-[24px] flex items-center justify-between shadow-sm active:scale-[0.98] transition-all cursor-pointer backdrop-blur-md hover:bg-white/80 dark:hover:bg-[#1e293b]/80 animate-slide-up"
+                                className="bg-white/60 dark:bg-[#1e293b]/60 border border-slate-200 dark:border-white/10 p-4 rounded-[24px] flex items-center justify-between shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:bg-white/80 dark:hover:bg-[#1e293b]/80 animate-slide-up"
                                 style={{ animationDelay: `${idx * 0.05}s` }}
                             >
                                 <div className="flex items-center gap-4 overflow-hidden">

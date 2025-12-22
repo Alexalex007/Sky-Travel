@@ -7,8 +7,24 @@ import ExpensesTool from './components/FoodTool';
 import ToolboxTool from './components/PhraseTool';
 import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, GlobeIcon, SparklesIcon, ClipboardDocumentListIcon, ArchiveBoxArrowDownIcon, TrashIcon, XMarkIcon, ArchiveIcon, RefreshIcon } from './components/Icons';
 
-const APP_VERSION = "v4.0.1";
+const APP_VERSION = "v4.0.3";
 const CHANGELOG_DATA = [
+    {
+        version: "v4.0.3",
+        date: "2025-12-21",
+        items: [
+            "優化：移除常用工具頁面底部的模糊遮罩層",
+            "修正：部分介面顯示問題"
+        ]
+    },
+    {
+        version: "v4.0.2",
+        date: "2025-12-21",
+        items: [
+            "優化：移除常用工具頁面的毛玻璃模糊效果",
+            "優化：調整介面視覺細節"
+        ]
+    },
     {
         version: "v4.0.1",
         date: "2025-12-21",
@@ -745,7 +761,7 @@ function App() {
       </div>
 
       {/* Global Bottom Gradient Mask for Seamless Scrolling */}
-      <div className="fixed bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#f0f9ff] via-[#f0f9ff]/90 to-transparent dark:from-[#05080F] dark:via-[#05080F]/90 z-40 pointer-events-none backdrop-blur-[2px]"></div>
+      <div className={`fixed bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#f0f9ff] via-[#f0f9ff]/90 to-transparent dark:from-[#05080F] dark:via-[#05080F]/90 z-40 pointer-events-none ${activeTab === Tab.TOOLBOX ? '' : 'backdrop-blur-[2px]'}`}></div>
 
       {/* Floating Bottom Navigation - REFINED STYLE FOR PERFECT BLENDING */}
       <div className="fixed bottom-6 left-6 right-6 h-[80px] bg-white/40 dark:bg-[#05080F]/40 backdrop-blur-2xl rounded-[32px] border border-white/20 dark:border-white/10 flex items-center px-2 shadow-2xl z-50 transition-colors duration-300">
