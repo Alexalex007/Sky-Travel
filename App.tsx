@@ -535,6 +535,11 @@ function App() {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 bg-transparent relative overflow-hidden transition-colors duration-300">
         
+        {/* Click outside listener */}
+        {showHomeSettings && (
+            <div className="fixed inset-0 z-40" onClick={() => setShowHomeSettings(false)}></div>
+        )}
+
         {/* Top Right Settings Button */}
         <div className="absolute top-6 right-6 z-50 flex flex-col items-end">
             <button 
@@ -553,6 +558,7 @@ function App() {
                     <button 
                         onClick={() => {
                             setIsDarkMode(!isDarkMode);
+                            setShowHomeSettings(false);
                         }}
                         className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group mb-1"
                     >
