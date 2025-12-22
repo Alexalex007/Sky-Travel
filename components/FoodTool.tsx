@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Trip, Expense, Budget } from '../types';
-import { PlusIcon, DiningIcon, BusIcon, ShoppingBagIcon, HomeIcon, TagIcon, ArrowsRightLeftIcon, CreditCardIcon, BanknotesIcon, TicketIcon, PlaneIcon, ShieldCheckIcon, ChevronDownIcon, ChevronLeftIcon, MapIcon } from './Icons';
+import { PlusIcon, DiningIcon, BusIcon, ShoppingBagIcon, HomeIcon, TagIcon, ArrowsRightLeftIcon, CreditCardIcon, BanknotesIcon, TicketIcon, PlaneIcon, ShieldCheckIcon, ChevronDownIcon, ChevronLeftIcon, MapIcon, ChartPieIcon, XMarkIcon, CalendarIcon } from './Icons';
 
 interface Props {
   trip: Trip;
@@ -75,8 +75,11 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
   const [budget, setBudget] = useState<Budget>(trip.budget || { amount: 0, currency: 'JPY', type: 'total' });
   
   // Modals
-  const [activeModal, setActiveModal] = useState<'NONE' | 'BUDGET' | 'ADD_PRE' | 'ADD_ON'>('NONE');
+  const [activeModal, setActiveModal] = useState<'NONE' | 'BUDGET' | 'ADD_PRE' | 'ADD_ON' | 'STATS'>('NONE');
   
+  // Edit State
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   // Exchange Rate Data
   const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
   
@@ -91,8 +94,16 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
       currency: string;
       title: string;
       category: string;
+      date: string;
       paymentMethod: 'cash' | 'card' | 'other';
-  }>({ amount: '', currency: 'HKD', title: '', category: '', paymentMethod: 'cash' });
+  }>({ 
+      amount: '', 
+      currency: 'HKD', 
+      title: '', 
+      category: '', 
+      date: new Date().toISOString().split('T')[0],
+      paymentMethod: 'cash' 
+  });
 
   // --- Effects ---
   useEffect(() => {
@@ -155,22 +166,42 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
   const budgetProgress = budget.amount > 0 ? (usedBudgetAmount / budget.amount) * 100 : 0;
   const isOverBudget = remainingBudget < 0;
 
-  // Category Breakdown for Chart
-  const categoryStats = useMemo(() => {
-      const stats: Record<string, number> = {};
-      expenses.forEach(exp => {
+  // Stats: On-Trip Only
+  const onTripStats = useMemo(() => {
+      const catStats: Record<string, number> = {};
+      const methodStats: Record<string, number> = { cash: 0, card: 0, other: 0 };
+      const dailyStats: Record<string, number> = {};
+      
+      onTripExpenses.forEach(exp => {
           const val = convert(exp.amount, exp.currency, globalCurrency);
-          stats[exp.category] = (stats[exp.category] || 0) + val;
+          
+          // Category
+          catStats[exp.category] = (catStats[exp.category] || 0) + val;
+          
+          // Payment Method
+          methodStats[exp.paymentMethod] = (methodStats[exp.paymentMethod] || 0) + val;
+
+          // Daily
+          dailyStats[exp.date] = (dailyStats[exp.date] || 0) + val;
       });
-      // Sort desc
-      return Object.entries(stats)
+
+      const categories = Object.entries(catStats)
         .sort(([,a], [,b]) => b - a)
         .map(([id, amount]) => {
              const allCats = [...PRE_TRIP_CATEGORIES, ...ON_TRIP_CATEGORIES];
              const catInfo = allCats.find(c => c.id === id) || { label: '其他', color: '#94a3b8', bg: 'bg-slate-500', icon: TagIcon };
              return { id, amount, ...catInfo };
         });
-  }, [expenses, globalCurrency, exchangeRates]);
+
+      // Daily stats array sorted by date
+      const days = Object.entries(dailyStats)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, total]) => ({ date, total }));
+        
+      const maxDailyTotal = Math.max(...days.map(d => d.total), 0);
+
+      return { categories, methods: methodStats, days, maxDailyTotal, total: onTripTotalBase };
+  }, [onTripExpenses, globalCurrency, exchangeRates, onTripTotalBase]);
 
   // Calculator Result
   const calcResult = useMemo(() => {
@@ -195,26 +226,62 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
   const handleSaveExpense = (isPre: boolean) => {
       if (!newExpense.amount || !newExpense.title || !newExpense.category) return;
       
-      const expense: Expense = {
-          id: Date.now().toString(),
-          title: newExpense.title,
-          amount: parseFloat(newExpense.amount),
-          currency: newExpense.currency,
-          category: newExpense.category,
-          date: new Date().toISOString().split('T')[0],
-          isPreTrip: isPre,
-          paymentMethod: newExpense.paymentMethod
-      };
+      if (editingId) {
+          // Update existing
+          setExpenses(expenses.map(e => e.id === editingId ? {
+              ...e,
+              title: newExpense.title,
+              amount: parseFloat(newExpense.amount),
+              currency: newExpense.currency,
+              category: newExpense.category,
+              date: newExpense.date,
+              paymentMethod: newExpense.paymentMethod
+          } : e));
+          setEditingId(null);
+      } else {
+          // Create new
+          const expense: Expense = {
+              id: Date.now().toString(),
+              title: newExpense.title,
+              amount: parseFloat(newExpense.amount),
+              currency: newExpense.currency,
+              category: newExpense.category,
+              date: newExpense.date || new Date().toISOString().split('T')[0],
+              isPreTrip: isPre,
+              paymentMethod: newExpense.paymentMethod
+          };
+          setExpenses([expense, ...expenses]);
+      }
 
-      setExpenses([expense, ...expenses]);
       setActiveModal('NONE');
-      setNewExpense({ amount: '', currency: globalCurrency, title: '', category: '', paymentMethod: 'cash' });
+      // Reset
+      setNewExpense({ 
+          amount: '', 
+          currency: globalCurrency, 
+          title: '', 
+          category: '', 
+          date: new Date().toISOString().split('T')[0],
+          paymentMethod: 'cash' 
+      });
   };
 
   const handleDeleteExpense = (id: string) => {
       if (confirm('確定要刪除這筆消費紀錄嗎？')) {
         setExpenses(expenses.filter(e => e.id !== id));
       }
+  };
+
+  const handleEditExpense = (exp: Expense) => {
+      setEditingId(exp.id);
+      setNewExpense({
+          amount: exp.amount.toString(),
+          currency: exp.currency,
+          title: exp.title,
+          category: exp.category,
+          date: exp.date,
+          paymentMethod: exp.paymentMethod
+      });
+      setActiveModal(exp.isPreTrip ? 'ADD_PRE' : 'ADD_ON');
   };
 
   const CircularProgress = ({ percentage, color, size = 140, stroke = 10 }: { percentage: number, color: string, size?: number, stroke?: number }) => {
@@ -306,7 +373,11 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                     listExpenses.map(exp => {
                          const cat = categories.find(c => c.id === exp.category) || categories[categories.length-1];
                          return (
-                             <div key={exp.id} className="bg-white/50 dark:bg-[#1e293b]/30 p-4 rounded-2xl flex items-center justify-between border border-white/50 dark:border-transparent animate-fade-in-up">
+                             <div 
+                                key={exp.id} 
+                                onClick={() => handleEditExpense(exp)}
+                                className="bg-white/50 dark:bg-[#1e293b]/30 p-4 rounded-2xl flex items-center justify-between border border-white/50 dark:border-transparent animate-fade-in-up active:scale-[0.98] transition-all cursor-pointer"
+                             >
                                  <div className="flex items-center gap-3">
                                      <div className={`w-10 h-10 rounded-full ${cat.bg} bg-opacity-20 flex items-center justify-center`} style={{ color: cat.color }}>
                                          <cat.icon className="w-5 h-5" />
@@ -318,7 +389,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                                  </div>
                                  <div className="text-right">
                                      <p className="text-slate-800 dark:text-white font-bold text-sm">{exp.currency} {exp.amount.toLocaleString()}</p>
-                                     <button onClick={() => handleDeleteExpense(exp.id)} className="text-[10px] text-red-400 mt-1">刪除</button>
+                                     <button onClick={(e) => { e.stopPropagation(); handleDeleteExpense(exp.id); }} className="text-[10px] text-red-400 mt-1 hover:text-red-500 font-bold">刪除</button>
                                  </div>
                              </div>
                          )
@@ -329,7 +400,18 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
             {/* Bottom Button - Fixed and elevated above global gradient */}
             <div className="fixed bottom-[120px] left-0 right-0 px-6 z-[60] pointer-events-none flex justify-center">
                  <button 
-                    onClick={() => setActiveModal(isPre ? 'ADD_PRE' : 'ADD_ON')}
+                    onClick={() => { 
+                        setEditingId(null); 
+                        setActiveModal(isPre ? 'ADD_PRE' : 'ADD_ON'); 
+                        setNewExpense({ 
+                            amount: '', 
+                            currency: globalCurrency, 
+                            title: '', 
+                            category: '', 
+                            date: new Date().toISOString().split('T')[0],
+                            paymentMethod: 'cash' 
+                        }); 
+                    }}
                     className="w-full py-4 bg-[#38bdf8] text-white font-black text-lg rounded-3xl hover:bg-[#0ea5e9] shadow-lg shadow-blue-500/30 transition-colors pointer-events-auto flex items-center justify-center gap-2 active:scale-95 transform duration-100 max-w-sm"
                  >
                      <PlusIcon className="w-5 h-5" />
@@ -345,14 +427,12 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
       
       {currentView === 'DASHBOARD' ? (
         <>
-            {/* 1. Header: Total Expenses - FIXED & REDESIGNED (Compact Version) */}
+            {/* 1. Header: Total Expenses */}
             <div className="px-6 pt-6 pb-2 sticky top-0 z-30 pointer-events-none">
-                {/* The card itself needs pointer-events-auto to be clickable/interactive */}
                 <div className="pointer-events-auto relative overflow-hidden rounded-[32px] p-5 shadow-xl shadow-blue-500/20 transition-all duration-300
                     bg-gradient-to-br from-[#38bdf8] to-[#0284c7]
                     dark:from-[#0f172a] dark:to-[#1e293b] dark:border dark:border-white/10"
                 >
-                     {/* Decorative Elements */}
                      <div className="absolute -right-4 -top-12 h-40 w-40 rounded-full bg-white/10 blur-3xl pointer-events-none"></div>
                      <div className="absolute -left-4 -bottom-12 h-40 w-40 rounded-full bg-black/5 dark:bg-blue-500/10 blur-3xl pointer-events-none"></div>
 
@@ -360,7 +440,6 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                          <div className="flex justify-between items-start">
                             <span className="text-blue-50 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">總開支 TOTAL</span>
                             
-                            {/* Modern Currency Switcher */}
                             <div className="relative">
                                 <select 
                                     value={globalCurrency} 
@@ -398,7 +477,6 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                     </div>
 
                     <div className="flex items-center justify-between gap-4">
-                        {/* Circular Indicator */}
                         <div className="flex-shrink-0">
                              <CircularProgress 
                                 percentage={budgetProgress} 
@@ -406,7 +484,6 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                              />
                         </div>
 
-                        {/* Stats Text */}
                         <div className="flex-grow space-y-4">
                              <div className="bg-slate-50/50 dark:bg-white/5 rounded-2xl p-3 border border-slate-200/50 dark:border-white/5">
                                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">預算上限 ({budget.type === 'total' ? '總額' : '現金'})</p>
@@ -426,44 +503,20 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                     </div>
                 </div>
 
-                {/* 3. Category Breakdown Bar Chart */}
-                {categoryStats.length > 0 && (
-                     <div className="bg-white/60 dark:bg-[#1e293b]/40 border border-white/50 dark:border-white/10 rounded-[32px] p-6 backdrop-blur-xl">
-                        <h3 className="text-slate-800 dark:text-white font-black text-lg mb-4">消費類別排行</h3>
-                        <div className="space-y-4">
-                            {categoryStats.slice(0, 4).map((cat, idx) => {
-                                const percent = (cat.amount / displayedTotalExpenses) * 100;
-                                return (
-                                    <div key={cat.id}>
-                                        <div className="flex justify-between items-center mb-1.5">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-5 h-5 rounded-full ${cat.bg} bg-opacity-20 flex items-center justify-center`} style={{ color: cat.color }}>
-                                                    <cat.icon className="w-3 h-3" />
-                                                </div>
-                                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{cat.label}</span>
-                                            </div>
-                                            <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">
-                                                {Math.round(percent)}% <span className="text-slate-400 text-[10px] ml-1">({globalCurrency} {Math.round(cat.amount).toLocaleString()})</span>
-                                            </span>
-                                        </div>
-                                        <div className="h-2 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
-                                            <div 
-                                                className="h-full rounded-full transition-all duration-1000 ease-out"
-                                                style={{ 
-                                                    width: `${percent}%`,
-                                                    backgroundColor: cat.color,
-                                                    boxShadow: `0 0 10px ${cat.color}60`
-                                                }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                {/* 3. Analysis Button */}
+                <button 
+                    onClick={() => setActiveModal('STATS')}
+                    className="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 p-1 rounded-[32px] shadow-lg shadow-purple-500/20 group active:scale-95 transition-transform"
+                >
+                    <div className="bg-white/95 dark:bg-[#1f2937]/95 backdrop-blur-md rounded-[28px] p-4 flex items-center justify-center gap-3 h-16 group-hover:bg-opacity-90 transition-all">
+                        <div className="w-10 h-10 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-500 dark:text-violet-300 flex items-center justify-center">
+                            <ChartPieIcon className="w-5 h-5" />
                         </div>
-                     </div>
-                )}
+                        <span className="font-black text-slate-800 dark:text-white text-lg tracking-wide">查看消費分析報表</span>
+                    </div>
+                </button>
 
-                {/* 4. Quick Access Tabs (Mini Cards) */}
+                {/* 4. Quick Access Tabs */}
                 <div className="grid grid-cols-2 gap-3">
                     <button 
                         onClick={() => setCurrentView('PRE_TRIP')}
@@ -497,7 +550,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                         <ArrowsRightLeftIcon className="w-5 h-5" />
                         <span className="font-bold text-sm">實時匯率計算器</span>
                     </div>
-                    
+                    {/* ... (Calculator content same as before) ... */}
                     <div className="space-y-2">
                         <div className="bg-slate-50 dark:bg-[#0f172a] rounded-2xl p-4 border border-slate-200 dark:border-white/5 flex justify-between items-center">
                             <div>
@@ -563,13 +616,10 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                         1.00 {calcFrom} = {(exchangeRates[calcTo] / exchangeRates[calcFrom]).toFixed(6)} {calcTo} • Real-time
                     </p>
 
-                    {/* --- JAPAN TAX FREE WIDGET --- */}
                     {jpyValue !== null && (
                         <div className={`mt-4 rounded-2xl p-4 relative overflow-hidden transition-all duration-500 animate-fade-in-up border ${jpyValue >= TAX_FREE_THRESHOLD ? 'bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/30' : 'bg-[#1e293b] border-white/5'}`}>
-                             {/* Background Effects - Animated Stars */}
                              {jpyValue >= TAX_FREE_THRESHOLD && (
                                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                                     {/* Simple CSS-based stars */}
                                     <div className="absolute top-2 left-10 w-1 h-1 bg-white rounded-full animate-pulse" style={{ animationDuration: '2s' }}></div>
                                     <div className="absolute bottom-4 right-10 w-1.5 h-1.5 bg-amber-200 rounded-full animate-bounce" style={{ animationDuration: '3s' }}></div>
                                     <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-white rounded-full animate-pulse" style={{ animationDuration: '1.5s' }}></div>
@@ -601,7 +651,6 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                                      )}
                                  </div>
 
-                                 {/* Status Ring / Icon */}
                                  <div>
                                      {jpyValue >= TAX_FREE_THRESHOLD ? (
                                          <div className="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/40 animate-scale-in">
@@ -611,7 +660,6 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                                          </div>
                                      ) : (
                                         <div className="relative w-12 h-12 flex items-center justify-center">
-                                            {/* Mini Circular Progress */}
                                             <CircularProgress 
                                                 percentage={(jpyValue / TAX_FREE_THRESHOLD) * 100} 
                                                 color="#38bdf8" 
@@ -636,11 +684,9 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
             {/* 1. Set Budget Modal */}
             {activeModal === 'BUDGET' && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-                    {/* ... (Modal content same as before) ... */}
                     <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl animate-slide-up">
                         <h3 className="text-xl font-bold text-slate-800 dark:text-white text-center mb-8">設定旅途預算</h3>
                         
-                        {/* Amount & Currency Split Block */}
                         <div className="flex gap-3 mb-8">
                             <div className="flex-1 bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex flex-col justify-center h-20 relative">
                                 <span className="text-[10px] font-bold text-slate-400 absolute top-2 left-4">金額</span>
@@ -658,7 +704,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                                     onChange={e => setBudget({...budget, currency: e.target.value})}
                                     className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
                                 >
-                                    {ALL_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                                    {ALL_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} {c.name}</option>)}
                                 </select>
                                 <div className="flex items-center gap-1.5 pointer-events-none">
                                     <span className="text-slate-900 dark:text-white font-bold text-lg">{budget.currency}</span>
@@ -669,7 +715,6 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
 
                         <p className="text-slate-500 text-xs font-bold text-center mb-2">預算類型</p>
                         
-                        {/* Premium Glass Sliding Budget Type Toggle - Desaturated Glass */}
                         <div className="bg-slate-100/50 dark:bg-white/5 p-1.5 rounded-2xl flex relative mb-8 h-14 items-center backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-inner">
                             <div 
                                     className={`absolute top-1.5 bottom-1.5 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg border border-white/20 backdrop-blur-md
@@ -704,14 +749,13 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
             {/* 2. Add Expense Modal (Pre & On-Trip) */}
             {(activeModal === 'ADD_PRE' || activeModal === 'ADD_ON') && (
                 <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm sm:p-4 animate-fade-in">
-                    {/* ... (Modal content same as before) ... */}
                     <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] border-t sm:border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col animate-slide-up max-h-[90vh]">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">
-                                {activeModal === 'ADD_PRE' ? '新增行前開支' : '新增旅途消費'}
+                                {editingId ? '編輯消費項目' : (activeModal === 'ADD_PRE' ? '新增行前開支' : '新增旅途消費')}
                             </h3>
                             <button onClick={() => setActiveModal('NONE')} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                <XMarkIcon className="w-5 h-5" />
                             </button>
                         </div>
 
@@ -735,7 +779,7 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                                             onChange={e => setNewExpense({...newExpense, currency: e.target.value})}
                                             className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
                                         >
-                                            {ALL_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                                            {ALL_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} {c.name}</option>)}
                                         </select>
                                         <div className="flex flex-col items-center gap-1 pointer-events-none">
                                             <div className="flex items-center gap-1">
@@ -748,17 +792,31 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                                 </div>
                             </div>
 
-                            {/* Name */}
-                            <div>
-                                <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">項目名稱</label>
-                                <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
-                                    <input 
-                                        type="text" 
-                                        placeholder="例如：機票、晚餐、紀念品..." 
-                                        value={newExpense.title}
-                                        onChange={e => setNewExpense({...newExpense, title: e.target.value})}
-                                        className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg" 
-                                    />
+                            {/* Name & Date */}
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">項目名稱</label>
+                                    <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
+                                        <input 
+                                            type="text" 
+                                            placeholder="例如：機票、晚餐、紀念品..." 
+                                            value={newExpense.title}
+                                            onChange={e => setNewExpense({...newExpense, title: e.target.value})}
+                                            className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg" 
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">日期</label>
+                                    <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3">
+                                        <span className="text-slate-400"><CalendarIcon className="w-5 h-5" /></span>
+                                        <input 
+                                            type="date"
+                                            value={newExpense.date}
+                                            onChange={e => setNewExpense({...newExpense, date: e.target.value})}
+                                            className="bg-transparent w-full text-slate-900 dark:text-white font-bold text-lg focus:outline-none"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
@@ -818,8 +876,132 @@ const ExpensesTool: React.FC<Props> = ({ trip, onUpdateTrip }) => {
                             disabled={!newExpense.amount || !newExpense.title || !newExpense.category}
                             className={`w-full py-4 rounded-3xl font-bold text-lg shadow-lg mt-auto transition-all ${(!newExpense.amount || !newExpense.title || !newExpense.category) ? 'bg-slate-200 dark:bg-[#1f2937] text-slate-500 cursor-not-allowed' : 'bg-[#38bdf8] text-white hover:bg-[#0ea5e9] shadow-blue-500/30'}`}
                         >
-                            確認新增
+                            {editingId ? '更新項目' : '確認新增'}
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* 3. Analysis Stats Modal */}
+            {activeModal === 'STATS' && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl animate-slide-up relative overflow-hidden flex flex-col max-h-[85vh]">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                <ChartPieIcon className="w-6 h-6 text-violet-500" />
+                                旅途消費分析
+                            </h3>
+                            <button onClick={() => setActiveModal('NONE')} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                                <XMarkIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="flex-grow overflow-y-auto no-scrollbar space-y-8 pb-4">
+                            {/* Payment Methods */}
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest">付款方式統計 (On-Trip)</h4>
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-3 text-center">
+                                        <div className="text-emerald-500 mb-1 flex justify-center"><BanknotesIcon className="w-5 h-5" /></div>
+                                        <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 font-bold mb-0.5">現金</p>
+                                        <p className="text-emerald-600 dark:text-emerald-400 font-bold text-sm truncate">{Math.round(onTripStats.methods.cash).toLocaleString()}</p>
+                                    </div>
+                                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 text-center">
+                                        <div className="text-blue-500 mb-1 flex justify-center"><CreditCardIcon className="w-5 h-5" /></div>
+                                        <p className="text-[10px] text-blue-600/70 dark:text-blue-400/70 font-bold mb-0.5">信用卡</p>
+                                        <p className="text-blue-600 dark:text-blue-400 font-bold text-sm truncate">{Math.round(onTripStats.methods.card).toLocaleString()}</p>
+                                    </div>
+                                    <div className="bg-slate-500/10 border border-slate-500/20 rounded-2xl p-3 text-center">
+                                        <div className="text-slate-500 mb-1 flex justify-center"><TagIcon className="w-5 h-5" /></div>
+                                        <p className="text-[10px] text-slate-600/70 dark:text-slate-400/70 font-bold mb-0.5">其他</p>
+                                        <p className="text-slate-600 dark:text-slate-400 font-bold text-sm truncate">{Math.round(onTripStats.methods.other).toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Category Breakdown */}
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest">類別排行 (On-Trip)</h4>
+                                {onTripStats.categories.length === 0 ? (
+                                    <div className="py-8 text-center text-slate-400 text-sm font-bold border border-dashed border-slate-200 dark:border-white/10 rounded-2xl">
+                                        尚無旅途消費數據
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {onTripStats.categories.map((cat, idx) => {
+                                            const percent = (cat.amount / onTripStats.total) * 100;
+                                            return (
+                                                <div key={cat.id}>
+                                                    <div className="flex justify-between items-center mb-1.5">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={`w-6 h-6 rounded-full ${cat.bg} bg-opacity-20 flex items-center justify-center font-bold text-xs`} style={{ color: cat.color }}>
+                                                                {idx + 1}
+                                                            </div>
+                                                            <div className={`w-6 h-6 rounded-full ${cat.bg} bg-opacity-20 flex items-center justify-center`} style={{ color: cat.color }}>
+                                                                <cat.icon className="w-3.5 h-3.5" />
+                                                            </div>
+                                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{cat.label}</span>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <span className="text-xs font-bold text-slate-900 dark:text-white font-mono block">
+                                                                {globalCurrency} {Math.round(cat.amount).toLocaleString()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="h-2 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden flex items-center gap-2">
+                                                        <div 
+                                                            className="h-full rounded-full transition-all duration-1000 ease-out"
+                                                            style={{ 
+                                                                width: `${percent}%`,
+                                                                backgroundColor: cat.color,
+                                                                boxShadow: `0 0 10px ${cat.color}60`
+                                                            }}
+                                                        ></div>
+                                                        <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{Math.round(percent)}%</span>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Daily Expenses Chart */}
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest">每日開支 (On-Trip)</h4>
+                                {onTripStats.days.length === 0 ? (
+                                    <div className="py-8 text-center text-slate-400 text-sm font-bold border border-dashed border-slate-200 dark:border-white/10 rounded-2xl">
+                                        尚無旅途消費數據
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {onTripStats.days.map((day) => {
+                                            const percent = onTripStats.maxDailyTotal > 0 ? (day.total / onTripStats.maxDailyTotal) * 100 : 0;
+                                            const dateObj = new Date(day.date);
+                                            const dateLabel = !isNaN(dateObj.getTime()) ? `${dateObj.getMonth() + 1}/${dateObj.getDate()}` : day.date;
+                                            
+                                            return (
+                                                <div key={day.date} className="flex items-center gap-3">
+                                                    <div className="w-10 text-xs font-bold text-slate-500 text-right shrink-0">{dateLabel}</div>
+                                                    <div className="flex-grow h-8 bg-slate-50 dark:bg-white/5 rounded-lg relative overflow-hidden flex items-center px-2">
+                                                         <div 
+                                                            className="absolute top-0 bottom-0 left-0 bg-blue-500/20 dark:bg-blue-400/20 rounded-lg transition-all duration-1000 ease-out"
+                                                            style={{ width: `${percent}%` }}
+                                                         ></div>
+                                                         <span className="relative z-10 text-xs font-bold text-slate-700 dark:text-slate-300 pl-1">
+                                                             {globalCurrency} {Math.round(day.total).toLocaleString()}
+                                                         </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="text-center pt-2">
+                            <p className="text-[10px] text-slate-400 font-bold">所有金額皆已換算為 {globalCurrency}</p>
+                        </div>
                     </div>
                 </div>
             )}

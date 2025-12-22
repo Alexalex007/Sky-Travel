@@ -43,10 +43,10 @@ const FlightCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: str
              onDragOver={onDragOver}
              onDrop={onDrop}
           >
-              {/* Timeline Line (Gradient to next) */}
+              {/* Timeline Line (Gradient to next) - Fixed Alignment to center 27px (left-26px with w-0.5) */}
               {!isLast && (
                   <div 
-                    className="absolute left-[23px] top-1/2 w-0.5 z-0 opacity-80"
+                    className="absolute left-[26px] top-1/2 w-0.5 z-0 opacity-80"
                     style={{ 
                         background: `linear-gradient(to bottom, ${typeColor.hex}, ${nextColor.hex})`,
                         height: 'calc(100% + 32px)' 
@@ -54,7 +54,7 @@ const FlightCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: str
                   ></div>
               )}
               
-              {/* Centered Dot */}
+              {/* Centered Dot - Fixed Alignment center 27px (left-19px + 3px border + 5px radius) */}
               <div 
                   className="absolute left-[19px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full z-20 shadow-[0_0_10px_rgba(0,0,0,0.5)] box-content dark:bg-[#05080F] bg-white border-[3px]"
                   style={{ 
@@ -148,7 +148,7 @@ const ActivityCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: s
         >
             {!isLast && (
                 <div 
-                className="absolute left-[23px] top-1/2 w-0.5 z-0 opacity-80"
+                className="absolute left-[26px] top-1/2 w-0.5 z-0 opacity-80"
                 style={{ 
                     background: `linear-gradient(to bottom, ${typeColor.hex}, ${nextColor.hex})`,
                     height: 'calc(100% + 32px)' 
@@ -321,7 +321,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   const getHeaderLocation = () => {
       // Single Trip
       if (trip.type === 'Single' || !trip.stops) {
-          return <span className="truncate max-w-[200px]">{trip.destination.split(',')[0]}</span>;
+          return <span className="truncate">{trip.destination.split(',')[0]}</span>;
       }
 
       // Multi Trip Transition Check
@@ -332,10 +332,10 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
           
           if (selectedDate === currentStop.endDate && selectedDate === nextStop.startDate) {
               return (
-                  <div className="flex items-center gap-2 overflow-hidden">
-                      <span className="truncate max-w-[100px]">{currentStop.destination}</span>
+                  <div className="flex items-center gap-2 overflow-hidden min-w-0">
+                      <span className="truncate">{currentStop.destination}</span>
                       <ArrowLongRightIcon className="w-5 h-5 flex-shrink-0 animate-pulse text-[#38bdf8]" />
-                      <span className="truncate max-w-[100px]">{nextStop.destination}</span>
+                      <span className="truncate">{nextStop.destination}</span>
                   </div>
               );
           }
@@ -343,13 +343,14 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
 
       // If not transition, find current stop
       const activeStop = trip.stops.find(s => selectedDate >= s.startDate && selectedDate <= s.endDate);
-      return <span className="truncate max-w-[200px]">{activeStop ? activeStop.destination : trip.destination.split(',')[0]}</span>;
+      return <span className="truncate">{activeStop ? activeStop.destination : trip.destination.split(',')[0]}</span>;
   };
 
   const closeModal = () => {
     setShowAddModal(false);
     setEditingActivityId(null);
     setModalMode('PLAN');
+    // Reset to defaults or basic time, but when adding new, we calculate in onClick
     setNewActivity({ 
         time: '11:35', 
         title: '', 
@@ -371,6 +372,41 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
         arrivalTimezone: 'GMT+09:00',
         duration: ''
     });
+  };
+
+  const getNextStartTime = () => {
+      if (!currentActivities || currentActivities.length === 0) return '09:00';
+      const last = currentActivities[currentActivities.length - 1];
+      
+      let h = 0, m = 0;
+      
+      if (last.type === 'flight' && last.flightInfo) {
+          // If flight, next activity starts at arrival time
+          const parts = last.flightInfo.arrivalTime.split(':');
+          h = parseInt(parts[0]) || 0;
+          m = parseInt(parts[1]) || 0;
+      } else {
+          // Normal activity: start time + duration
+          const parts = last.time.split(':');
+          h = parseInt(parts[0]) || 0;
+          m = parseInt(parts[1]) || 0;
+          
+          let durationMins = 60; // default 1h
+          if (last.duration) {
+              // Handle "2h" or "1.5h"
+              durationMins = Math.round(parseFloat(last.duration.replace('h', '')) * 60);
+          }
+          
+          m += durationMins;
+      }
+      
+      // Handle minute overflow
+      h += Math.floor(m / 60);
+      m = m % 60;
+      // Handle day overflow (keep within 24h for time picker)
+      h = h % 24;
+      
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   };
 
   const handleSaveActivity = () => {
@@ -529,13 +565,13 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
           <div className="stars"></div>
           <div className="relative z-10 flex justify-between items-center w-full mt-1">
             {/* Left: Info */}
-            <div className="flex flex-col gap-1.5 w-full">
+            <div className="flex flex-col gap-3 flex-1 min-w-0 mr-4">
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)] flex-shrink-0">
                         <MapIcon className="w-4 h-4 text-slate-800 dark:text-white" />
                     </div>
                     {/* Updated Header Title Logic and Sizing */}
-                    <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-wide leading-none drop-shadow-lg">
+                    <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-wide leading-none drop-shadow-lg truncate">
                         {getHeaderLocation()}
                     </h1>
                 </div>
@@ -548,11 +584,13 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
             {/* Right: Weather Widget - Updated Style */}
             <button 
                 onClick={handleWeatherSearch}
-                className="w-[68px] h-[68px] rounded-[24px] bg-slate-900/40 backdrop-blur-md border border-white/10 flex flex-col items-center justify-center text-yellow-300 shadow-xl active:scale-95 transition-transform flex-shrink-0 relative overflow-hidden group"
+                className="w-[68px] h-[68px] rounded-[32px] bg-slate-900/40 backdrop-blur-md border border-white/10 flex flex-col items-center justify-center text-yellow-300 shadow-xl active:scale-95 transition-transform flex-shrink-0 relative overflow-hidden group"
             >
                 {/* Glow effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 mb-0.5 relative z-10"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" strokeOpacity="0.5" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 mb-0.5 relative z-10">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                </svg>
             </button>
           </div>
       </div>
@@ -641,7 +679,28 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
 
       {/* FAB - Fixed Position significantly lower */}
       <button 
-        onClick={() => { setEditingActivityId(null); setModalMode('PLAN'); setShowAddModal(true); }}
+        onClick={() => { 
+            setEditingActivityId(null); 
+            setModalMode('PLAN');
+            
+            // Auto Calculate Next Start Time
+            const nextTime = getNextStartTime();
+            setNewActivity({ 
+                time: nextTime, 
+                title: '', 
+                location: '', 
+                duration: '2h',
+                description: '',
+                type: 'sightseeing' 
+            });
+            // Also suggest for flight default time
+            setNewFlight(prev => ({
+                ...prev,
+                departureTime: nextTime
+            }));
+            
+            setShowAddModal(true); 
+        }}
         className="fixed bottom-[130px] right-6 z-[60] w-16 h-16 bg-[#38bdf8] hover:bg-[#0ea5e9] rounded-full flex items-center justify-center text-white shadow-[0_0_30px_rgba(56,189,248,0.5)] active:scale-90 transition-all duration-300 border-4 border-white dark:border-[#05080F]"
       >
         <PlusIcon className="w-8 h-8 stroke-[2.5]" />
@@ -765,28 +824,6 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                  </div>
              )}
              </div>
-             {!editingActivityId && (
-                 <div className="mt-2 mb-4 relative p-1 rounded-2xl bg-slate-50 dark:bg-[#1f2937]/50 border border-slate-200 dark:border-white/5 backdrop-blur-xl flex h-14 shadow-inner">
-                    <div 
-                        className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl shadow-[0_0_15px_rgba(56,189,248,0.3)] transition-all duration-300 ease-out z-0
-                        ${modalMode === 'PLAN' ? 'left-1 bg-gradient-to-tr from-[#38bdf8] to-blue-500' : 'left-[50%] bg-gradient-to-tr from-sky-400 to-cyan-400'}
-                        `}
-                    ></div>
-                    <button 
-                        onClick={() => setModalMode('PLAN')}
-                        className={`flex-1 relative z-10 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${modalMode === 'PLAN' ? 'text-white' : 'text-slate-500'}`}
-                    >
-                        行程規劃
-                    </button>
-                    <button 
-                        onClick={() => setModalMode('FLIGHT')}
-                        className={`flex-1 relative z-10 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${modalMode === 'FLIGHT' ? 'text-white' : 'text-slate-500'}`}
-                    >
-                        <PlaneIcon className="w-4 h-4" />
-                        航班資訊
-                    </button>
-                 </div>
-             )}
              <div className="pt-2 flex gap-3 pb-safe">
                  {editingActivityId && <button onClick={handleDeleteActivity} className="w-14 flex items-center justify-center rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20"><TrashIcon className="w-5 h-5" /></button>}
                  <button onClick={handleSaveActivity} disabled={!isFormValid} className={`flex-1 py-4 rounded-2xl font-bold border transition-all duration-300 shadow-lg ${isFormValid ? 'bg-[#38bdf8] text-white border-transparent shadow-blue-500/30' : 'bg-slate-100 dark:bg-[#1f2937] text-slate-500 border-slate-200 dark:border-white/5 cursor-not-allowed'}`}>{isFormValid ? '儲存變更' : '請填寫完整資訊'}</button>
