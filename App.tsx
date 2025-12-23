@@ -236,7 +236,7 @@ function App() {
       let content = `🌍 ${tripData.name}\n`;
       content += `📍 目的地: ${tripData.destination}\n`;
       content += `📅 日期: ${tripData.startDate} 至 ${tripData.endDate}\n`;
-      content += `----------------------------------------\n\n`;
+      content += `\n`; // Removed dashed line
 
       if (tripData.type === 'Multi' && tripData.stops) {
           content += `🗺️ 多城市行程:\n`;
@@ -259,13 +259,13 @@ function App() {
           }
       });
 
-      content += `\n----------------------------------------\n`;
+      content += `\n\n`; // Removed dashed line, kept spacing
       content += `💰 消費紀錄:\n`;
       tripData.expenses.forEach(exp => {
           content += `${exp.date} | ${exp.title}: ${exp.currency} ${exp.amount} (${exp.category})\n`;
       });
 
-      content += `\n----------------------------------------\n`;
+      content += `\n\n`; // Removed dashed line, kept spacing
       content += `🧳 打包清單:\n`;
       const unchecked = tripData.packingList.filter(i => !i.checked);
       const checked = tripData.packingList.filter(i => i.checked);
