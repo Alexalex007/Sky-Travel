@@ -7,8 +7,26 @@ import ExpensesTool from './components/FoodTool';
 import ToolboxTool from './components/PhraseTool';
 import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, GlobeIcon, SparklesIcon, ClipboardDocumentListIcon, ArchiveBoxArrowDownIcon, TrashIcon, XMarkIcon, ArchiveIcon, RefreshIcon, ArrowDownTrayIcon, DocumentDuplicateIcon, CheckIcon } from './components/Icons';
 
-const APP_VERSION = "v4.0.7";
+const APP_VERSION = "v4.0.9";
 const CHANGELOG_DATA = [
+    {
+        version: "v4.0.9",
+        date: "2025-12-23",
+        items: [
+            "優化：新增行程頁面整合航班輸入功能",
+            "新增：新增行程時自動隱藏底部導航列，提供沉浸式體驗",
+            "視覺：新增玻璃擬態滑動切換按鈕"
+        ]
+    },
+    {
+        version: "v4.0.8",
+        date: "2025-12-23",
+        items: [
+            "修正：恢復行程頁面中的「新增航班」按鈕",
+            "優化：調整行程工具列佈局，操作更順手",
+            "優化：匯出行程即時更新功能"
+        ]
+    },
     {
         version: "v4.0.7",
         date: "2025-12-23",
@@ -93,6 +111,9 @@ function App() {
   const [savedTrip, setSavedTrip] = useState<Trip | null>(null);
   const [archivedTrips, setArchivedTrips] = useState<Trip[]>([]);
   
+  // UI Control State
+  const [isFullScreenModalOpen, setIsFullScreenModalOpen] = useState(false);
+
   // Modals & Popups State
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
   const [isEditTripOpen, setIsEditTripOpen] = useState(false);
@@ -963,45 +984,47 @@ function App() {
         {/* Main Content Area */}
         <div className="flex-grow overflow-hidden z-10 relative">
             {activeTab === Tab.SETTINGS && <SettingsView />}
-            {activeTab === Tab.ITINERARY && tripData && <ItineraryTool trip={tripData} onUpdateTrip={setTripData} isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />}
+            {activeTab === Tab.ITINERARY && tripData && <ItineraryTool trip={tripData} onUpdateTrip={setTripData} isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} onToggleFullScreen={setIsFullScreenModalOpen} />}
             {activeTab === Tab.EXPENSES && tripData && <ExpensesTool trip={tripData} onUpdateTrip={setTripData} />}
             {activeTab === Tab.PACKING && tripData && <PackingTool trip={tripData} onUpdateTrip={setTripData} />}
             {activeTab === Tab.TOOLBOX && tripData && <ToolboxTool trip={tripData} onUpdateTrip={setTripData} />}
         </div>
 
         {/* Bottom Navigation */}
-        <div className={`flex-shrink-0 z-50 px-6 pb-6 pt-2 relative ${showBottomBlur ? 'bg-gradient-to-t from-white via-white/80 to-transparent dark:from-[#05080F] dark:via-[#05080F]/80' : ''}`}>
-             <div className="bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-[32px] shadow-2xl flex items-center justify-between p-2 relative h-[72px]">
-                 
-                 {/* Sliding Background Indicator */}
-                 <div 
-                    className="absolute top-2 bottom-2 rounded-[24px] bg-white dark:bg-white/10 shadow-md transition-all duration-300 ease-out z-0"
-                    style={{ 
-                        left: `calc(8px + (100% - 16px) * ${activeIndex} / 5)`, 
-                        width: `calc((100% - 16px) / 5)` 
-                    }}
-                 />
+        {!isFullScreenModalOpen && (
+            <div className={`flex-shrink-0 z-50 px-6 pb-6 pt-2 relative ${showBottomBlur ? 'bg-gradient-to-t from-white via-white/80 to-transparent dark:from-[#05080F] dark:via-[#05080F]/80' : ''}`}>
+                 <div className="bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-[32px] shadow-2xl flex items-center justify-between p-2 relative h-[72px]">
+                     
+                     {/* Sliding Background Indicator */}
+                     <div 
+                        className="absolute top-2 bottom-2 rounded-[24px] bg-white dark:bg-white/10 shadow-md transition-all duration-300 ease-out z-0"
+                        style={{ 
+                            left: `calc(8px + (100% - 16px) * ${activeIndex} / 5)`, 
+                            width: `calc((100% - 16px) / 5)` 
+                        }}
+                     />
 
-                 {tabs.map((tab) => {
-                     const isActive = activeTab === tab;
-                     return (
-                         <button
-                             key={tab}
-                             onClick={() => setActiveTab(tab)}
-                             className={`relative flex-1 h-full flex items-center justify-center gap-1 transition-all duration-300 rounded-[24px] z-10 ${isActive ? 'text-[#38bdf8]' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-                         >
-                             <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'scale-100'}`}>
-                                 {tab === Tab.ITINERARY && <GridIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
-                                 {tab === Tab.EXPENSES && <WalletIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
-                                 {tab === Tab.PACKING && <SuitcaseIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
-                                 {tab === Tab.TOOLBOX && <SparklesIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
-                                 {tab === Tab.SETTINGS && <CogIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
-                             </div>
-                         </button>
-                     );
-                 })}
-             </div>
-        </div>
+                     {tabs.map((tab) => {
+                         const isActive = activeTab === tab;
+                         return (
+                             <button
+                                 key={tab}
+                                 onClick={() => setActiveTab(tab)}
+                                 className={`relative flex-1 h-full flex items-center justify-center gap-1 transition-all duration-300 rounded-[24px] z-10 ${isActive ? 'text-[#38bdf8]' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                             >
+                                 <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'scale-100'}`}>
+                                     {tab === Tab.ITINERARY && <GridIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
+                                     {tab === Tab.EXPENSES && <WalletIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
+                                     {tab === Tab.PACKING && <SuitcaseIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
+                                     {tab === Tab.TOOLBOX && <SparklesIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
+                                     {tab === Tab.SETTINGS && <CogIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
+                                 </div>
+                             </button>
+                         );
+                     })}
+                 </div>
+            </div>
+        )}
         
         {/* Render Global Modals */}
 

@@ -8,6 +8,7 @@ interface Props {
   onUpdateTrip: (trip: Trip) => void;
   isDarkMode: boolean;
   toggleTheme: () => void;
+  onToggleFullScreen?: (isOpen: boolean) => void;
 }
 
 const timezones = Array.from({ length: 27 }, (_, i) => {
@@ -29,98 +30,67 @@ const getTypeColor = (type: string) => {
     }
 };
 
-const FlightCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: string, onClick: () => void, isLocked: boolean, onDragStart: (e: React.DragEvent) => void, onDragOver: (e: React.DragEvent) => void, onDrop: (e: React.DragEvent) => void }> = ({ activity, isLast, nextType, onClick, isLocked, onDragStart, onDragOver, onDrop }) => {
+const FlightCard: React.FC<{ activity: Activity, onClick: () => void }> = ({ activity, onClick }) => {
       const info = activity.flightInfo!;
-      const typeColor = getTypeColor('flight');
-      const nextColor = nextType ? getTypeColor(nextType) : typeColor;
-
       return (
           <div 
-             className="relative pl-12 animate-fade-in-up group touch-manipulation"
+             className="bg-white dark:bg-[#0f172a] rounded-[24px] overflow-hidden shadow-xl dark:shadow-blue-900/10 relative active:scale-95 transition-transform duration-200 border border-slate-200 dark:border-slate-800 group touch-manipulation cursor-pointer"
              onClick={onClick}
-             draggable={!isLocked}
-             onDragStart={onDragStart}
-             onDragOver={onDragOver}
-             onDrop={onDrop}
           >
-              {/* Timeline Line (Gradient to next) - Fixed Alignment to center 27px (left-26px with w-0.5) */}
-              {!isLast && (
-                  <div 
-                    className="absolute left-[26px] top-1/2 w-0.5 z-0 opacity-80"
-                    style={{ 
-                        background: `linear-gradient(to bottom, ${typeColor.hex}, ${nextColor.hex})`,
-                        height: 'calc(100% + 32px)' 
-                    }}
-                  ></div>
-              )}
-              
-              {/* Centered Dot - Fixed Alignment center 27px (left-19px + 3px border + 5px radius) */}
-              <div 
-                  className="absolute left-[19px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full z-20 shadow-[0_0_10px_rgba(0,0,0,0.5)] box-content dark:bg-[#05080F] bg-white border-[3px]"
-                  style={{ 
-                      borderColor: typeColor.hex
-                  }}
-              ></div>
-              
-              {/* Card */}
-              <div className="bg-white dark:bg-[#0f172a] rounded-[24px] overflow-hidden shadow-xl dark:shadow-blue-900/10 relative active:scale-95 transition-transform duration-200 border border-slate-200 dark:border-slate-800">
+              {/* Top Row: Flight Code, Plane Type, Icon */}
+              <div className="px-5 pt-4 pb-1 flex justify-between items-start">
+                  <div className="flex gap-2">
+                      <span className="bg-slate-100 dark:bg-[#1e293b] text-[#38bdf8] text-sm font-black px-2 py-1 rounded-md tracking-wider">{info.flightNumber}</span>
+                      {info.planeType && <span className="bg-slate-100 dark:bg-[#1e293b] text-slate-500 dark:text-slate-400 text-xs font-bold px-2 py-1 rounded-md">{info.planeType}</span>}
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#1e293b] flex items-center justify-center text-[#38bdf8]">
+                      <PlaneIcon className="w-5 h-5 transform -rotate-45" />
+                  </div>
+              </div>
+
+              {/* Middle Row: Codes and Gradient Arrow */}
+              <div className="px-5 py-1 flex justify-between items-center relative z-10">
+                  <div>
+                      <div className="text-4xl font-black text-slate-900 dark:text-white tracking-wide">{info.departureCode}</div>
+                  </div>
                   
-                  {/* Top Row: Flight Code, Plane Type, Icon */}
-                  <div className="px-5 pt-4 pb-1 flex justify-between items-start">
-                      <div className="flex gap-2">
-                          <span className="bg-slate-100 dark:bg-[#1e293b] text-[#38bdf8] text-sm font-black px-2 py-1 rounded-md tracking-wider">{info.flightNumber}</span>
-                          {info.planeType && <span className="bg-slate-100 dark:bg-[#1e293b] text-slate-500 dark:text-slate-400 text-xs font-bold px-2 py-1 rounded-md">{info.planeType}</span>}
-                      </div>
-                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#1e293b] flex items-center justify-center text-[#38bdf8]">
-                          <PlaneIcon className="w-5 h-5 transform -rotate-45" />
-                      </div>
+                  <div className="flex-grow px-4 flex items-center justify-center h-full pt-2">
+                      <svg width="100%" height="20" viewBox="0 0 100 20" preserveAspectRatio="none" className="w-full h-5">
+                          <defs>
+                              <linearGradient id={`arrowGrad-${activity.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                                  <stop offset="0%" stopColor="#64748b" stopOpacity="0.3" /> 
+                                  <stop offset="50%" stopColor="#38bdf8" />
+                                  <stop offset="100%" stopColor="#38bdf8" />
+                              </linearGradient>
+                          </defs>
+                          <path d="M0 10H98 M92 4L98 10L92 16" stroke={`url(#arrowGrad-${activity.id})`} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                      </svg>
                   </div>
 
-                  {/* Middle Row: Codes and Gradient Arrow */}
-                  <div className="px-5 py-1 flex justify-between items-center relative z-10">
-                      <div>
-                          <div className="text-4xl font-black text-slate-900 dark:text-white tracking-wide">{info.departureCode}</div>
-                      </div>
-                      
-                      <div className="flex-grow px-4 flex items-center justify-center h-full pt-2">
-                          <svg width="100%" height="20" viewBox="0 0 100 20" preserveAspectRatio="none" className="w-full h-5">
-                              <defs>
-                                  <linearGradient id={`arrowGrad-${activity.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                                      <stop offset="0%" stopColor="#64748b" stopOpacity="0.3" /> 
-                                      <stop offset="50%" stopColor="#38bdf8" />
-                                      <stop offset="100%" stopColor="#38bdf8" />
-                                  </linearGradient>
-                              </defs>
-                              <path d="M0 10H98 M92 4L98 10L92 16" stroke={`url(#arrowGrad-${activity.id})`} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                          </svg>
-                      </div>
-
-                      <div className="text-right">
-                          <div className="text-4xl font-black text-slate-900 dark:text-white tracking-wide">{info.arrivalCode}</div>
-                      </div>
+                  <div className="text-right">
+                      <div className="text-4xl font-black text-slate-900 dark:text-white tracking-wide">{info.arrivalCode}</div>
                   </div>
+              </div>
 
-                  <div className="px-5 pb-4 flex justify-between items-center">
-                      <div className="text-slate-400 dark:text-slate-300 font-bold text-lg tracking-widest">↗ {info.departureTime}</div>
-                      <div className="text-slate-400 dark:text-slate-300 font-bold text-lg tracking-widest">↘ {info.arrivalTime}</div>
-                  </div>
+              <div className="px-5 pb-4 flex justify-between items-center">
+                  <div className="text-slate-400 dark:text-slate-300 font-bold text-lg tracking-widest">↗ {info.departureTime}</div>
+                  <div className="text-slate-400 dark:text-slate-300 font-bold text-lg tracking-widest">↘ {info.arrivalTime}</div>
+              </div>
 
-                  {/* Bottom Row */}
-                  <div className="bg-slate-50 dark:bg-[#1e293b] px-5 py-2 flex justify-between items-center">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">FLIGHT TIME</span>
-                      <div className="flex items-center gap-2 text-[#38bdf8]">
-                           <HourglassIcon className="w-4 h-4" />
-                           <span className="text-sm font-bold font-mono">{info.duration}</span>
-                      </div>
+              {/* Bottom Row */}
+              <div className="bg-slate-50 dark:bg-[#1e293b] px-5 py-2 flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">FLIGHT TIME</span>
+                  <div className="flex items-center gap-2 text-[#38bdf8]">
+                       <HourglassIcon className="w-4 h-4" />
+                       <span className="text-sm font-bold font-mono">{info.duration}</span>
                   </div>
               </div>
           </div>
       );
 };
 
-const ActivityCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: string, onClick: () => void, isLocked: boolean, onDragStart: (e: React.DragEvent) => void, onDragOver: (e: React.DragEvent) => void, onDrop: (e: React.DragEvent) => void }> = ({ activity, isLast, nextType, onClick, isLocked, onDragStart, onDragOver, onDrop }) => {
+const ActivityCard: React.FC<{ activity: Activity, onClick: () => void }> = ({ activity, onClick }) => {
     const typeColor = getTypeColor(activity.type);
-    const nextColor = nextType ? getTypeColor(nextType) : typeColor;
     const hexToRgb = (hex: string) => {
         const r = parseInt(hex.slice(1, 3), 16);
         const g = parseInt(hex.slice(3, 5), 16);
@@ -139,70 +109,45 @@ const ActivityCard: React.FC<{ activity: Activity, isLast: boolean, nextType?: s
     
     return (
         <div 
-           className="relative pl-12 animate-fade-in-up group touch-manipulation" 
-           onClick={onClick}
-           draggable={!isLocked}
-           onDragStart={onDragStart}
-           onDragOver={onDragOver}
-           onDrop={onDrop}
+            onClick={onClick}
+            className="rounded-[28px] p-5 flex items-center justify-between border overflow-hidden relative transition-transform active:scale-[0.98] min-h-[100px] cursor-pointer touch-manipulation"
+            style={{ 
+                background: `rgba(${rgb}, 0.1)`, 
+                backdropFilter: 'blur(16px)',
+                borderColor: `rgba(${rgb}, 0.2)`
+            }}
         >
-            {!isLast && (
-                <div 
-                className="absolute left-[26px] top-1/2 w-0.5 z-0 opacity-80"
-                style={{ 
-                    background: `linear-gradient(to bottom, ${typeColor.hex}, ${nextColor.hex})`,
-                    height: 'calc(100% + 32px)' 
-                }}
-                ></div>
-            )}
-            
-            <div 
-              className="absolute left-[19px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full z-20 shadow-[0_0_10px_rgba(0,0,0,0.5)] box-content bg-white dark:bg-[#05080F] border-[3px]"
-              style={{ 
-                  borderColor: typeColor.hex
-              }}
-            ></div>
-
-            <div 
-                className="rounded-[28px] p-5 flex items-center justify-between border overflow-hidden relative transition-transform active:scale-[0.98] min-h-[100px]"
-                style={{ 
-                    background: `rgba(${rgb}, 0.1)`, 
-                    backdropFilter: 'blur(16px)',
-                    borderColor: `rgba(${rgb}, 0.2)`
-                }}
-            >
-                <div className="flex flex-col items-center justify-center min-w-[60px] pr-4 border-r border-slate-200 dark:border-white/10">
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold mb-0.5 uppercase tracking-wider">
-                        {parseInt(activity.time.split(':')[0]) >= 12 ? '下午' : '上午'}
-                    </span>
-                    <span className="text-3xl font-black text-slate-800 dark:text-white font-mono tracking-tighter leading-none">{activity.time}</span>
-                </div>
-
-                <div className="flex-1 px-5">
-                    <h3 className="text-slate-900 dark:text-white font-black text-xl mb-1 leading-tight tracking-wide">{activity.title}</h3>
-                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-bold">
-                        <MapIcon className="w-3 h-3" />
-                        <span className="truncate max-w-[140px]">{activity.location || activity.title}</span>
-                        <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-600 mx-1"></span>
-                        <span>{activity.duration || '1h'}</span>
-                    </div>
-                </div>
-
-                <button 
-                    onClick={handleMapClick}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center border border-white/50 dark:border-white/10 active:scale-90 transition-transform bg-white/50 dark:bg-transparent"
-                    style={{ color: typeColor.hex }}
-                >
-                    {activity.type === 'sightseeing' && <CameraIcon className="w-5 h-5" />}
-                    {activity.type === 'food' && <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.008v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>}
-                    {activity.type === 'transport' && <BusIcon className="w-5 h-5" />}
-                </button>
+            <div className="flex flex-col items-center justify-center min-w-[60px] pr-4 border-r border-slate-200 dark:border-white/10">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold mb-0.5 uppercase tracking-wider">
+                    {parseInt(activity.time.split(':')[0]) >= 12 ? '下午' : '上午'}
+                </span>
+                <span className="text-3xl font-black text-slate-800 dark:text-white font-mono tracking-tighter leading-none">{activity.time}</span>
             </div>
+
+            <div className="flex-1 px-5">
+                <h3 className="text-slate-900 dark:text-white font-black text-xl mb-1 leading-tight tracking-wide">{activity.title}</h3>
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-bold">
+                    <MapIcon className="w-3 h-3" />
+                    <span className="truncate max-w-[140px]">{activity.location || activity.title}</span>
+                    <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-600 mx-1"></span>
+                    <span>{activity.duration || '1h'}</span>
+                </div>
+            </div>
+
+            <button 
+                onClick={handleMapClick}
+                className="w-10 h-10 rounded-xl flex items-center justify-center border border-white/50 dark:border-white/10 active:scale-90 transition-transform bg-white/50 dark:bg-transparent"
+                style={{ color: typeColor.hex }}
+            >
+                {activity.type === 'sightseeing' && <CameraIcon className="w-5 h-5" />}
+                {activity.type === 'food' && <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.008v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>}
+                {activity.type === 'transport' && <BusIcon className="w-5 h-5" />}
+            </button>
         </div>
     );
 };
 
-const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggleTheme }) => {
+const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggleTheme, onToggleFullScreen }) => {
   const [selectedDate, setSelectedDate] = useState<string>(trip.startDate);
   const [dates, setDates] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -221,6 +166,13 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   // Flight Info Extra State for TZ
   const [depTz, setDepTz] = useState(8);
   const [arrTz, setArrTz] = useState(9);
+
+  // Notify parent about fullscreen modal state
+  useEffect(() => {
+      if (onToggleFullScreen) {
+          onToggleFullScreen(showAddModal);
+      }
+  }, [showAddModal, onToggleFullScreen]);
 
   // Activity State
   const [newActivity, setNewActivity] = useState<{
@@ -666,22 +618,24 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
           </div>
       </div>
 
-      {/* 2.5 Secondary Toolbar - Reduced Size */}
-      <div className="px-6 flex gap-3 mb-2">
+      {/* 2.5 Secondary Toolbar - Reduced Size, Fixed Layout */}
+      <div className="px-6 flex justify-between items-center gap-2 mb-2 pb-1 flex-shrink-0">
          <button 
              onClick={handleOpenRouteNav}
-             className="flex-1 h-10 rounded-xl bg-[#38bdf8]/10 border border-[#38bdf8]/20 flex items-center justify-center gap-2 text-[#38bdf8] font-bold text-xs shadow-sm active:scale-95 transition-transform"
+             className="flex-none px-4 h-10 rounded-xl bg-[#38bdf8]/10 border border-[#38bdf8]/20 flex items-center justify-center gap-2 text-[#38bdf8] font-bold text-xs shadow-sm active:scale-95 transition-transform whitespace-nowrap"
          >
              <div className="bg-[#38bdf8] rounded-full p-1">
                 <NavigationArrowIcon className="w-2.5 h-2.5 text-white" />
              </div>
-             本日路線導航
+             路線導航
          </button>
+
+         {/* Flight button removed, integrated into Modal Toggle */}
 
          <button 
             onClick={() => canSort && setIsLocked(!isLocked)}
             disabled={!canSort}
-            className={`flex-1 h-10 rounded-xl border flex items-center justify-center gap-2 font-bold text-xs shadow-sm transition-all ${
+            className={`flex-none px-4 h-10 rounded-xl border flex items-center justify-center gap-2 font-bold text-xs shadow-sm transition-all whitespace-nowrap ml-auto ${
                 !canSort 
                 ? 'bg-slate-100 dark:bg-[#1e293b]/40 border-slate-200 dark:border-white/5 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-50'
                 : isLocked 
@@ -690,36 +644,65 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
             }`}
          >
             {isLocked ? <LockClosedIcon className="w-3.5 h-3.5" /> : <LockOpenIcon className="w-3.5 h-3.5" />}
-            {isLocked ? '排序鎖定' : '排序解鎖'}
+            {isLocked ? '鎖定' : '解鎖'}
          </button>
       </div>
 
       {/* 3. Content Area */}
-      <div className="flex-grow overflow-y-auto px-6 pt-2 space-y-8 no-scrollbar relative pb-32">
+      <div className="flex-grow overflow-y-auto px-6 pt-2 space-y-0 no-scrollbar relative pb-32">
         {currentActivities.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-slate-400 dark:text-slate-700 space-y-4 mt-8 opacity-60">
             <CoffeeIcon className="w-24 h-24 stroke-1" />
             <p className="text-sm font-bold tracking-widest">本日尚無行程</p>
           </div>
         ) : (
-          <div className="relative pl-0 space-y-8 pt-4 pb-4">
+          <div className="relative pl-0 pt-4 pb-4">
             {currentActivities.map((activity, idx) => {
               const isLast = idx === currentActivities.length - 1;
               const nextActivity = !isLast ? currentActivities[idx + 1] : undefined;
-              const commonProps = {
-                  key: activity.id,
-                  activity,
-                  isLast,
-                  nextType: nextActivity?.type,
-                  onClick: () => openEditModal(activity),
-                  isLocked,
-                  onDragStart: (e: React.DragEvent) => onDragStart(e, idx),
-                  onDragOver,
-                  onDrop: (e: React.DragEvent) => onDrop(e, idx)
-              };
-              return activity.type === 'flight' && activity.flightInfo 
-                ? <FlightCard {...commonProps} /> 
-                : <ActivityCard {...commonProps} />;
+              
+              const typeColor = getTypeColor(activity.type);
+              const nextColor = nextActivity ? getTypeColor(nextActivity.type) : typeColor;
+              const lineGradient = `linear-gradient(to bottom, ${typeColor.hex}, ${nextColor.hex})`;
+
+              return (
+                <div 
+                    key={activity.id}
+                    draggable={!isLocked}
+                    onDragStart={(e) => onDragStart(e, idx)}
+                    onDragOver={onDragOver}
+                    onDrop={(e) => onDrop(e, idx)}
+                    className={`group relative flex gap-4 ${!isLast ? 'pb-8' : ''}`}
+                >
+                    {/* Timeline Column */}
+                    <div className="flex flex-col items-center w-6 flex-shrink-0 relative">
+                        {/* Dot - Fixed at top-8 to align with card content */}
+                        <div 
+                            className="absolute top-8 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full z-10 shadow-[0_0_10px_rgba(0,0,0,0.5)] box-content dark:bg-[#05080F] bg-white border-[3px]"
+                            style={{ borderColor: typeColor.hex }}
+                        ></div>
+
+                        {/* Line - Extended to connect to next dot */}
+                        {!isLast && (
+                            <div 
+                                className="absolute top-8 left-1/2 -translate-x-1/2 w-0.5 z-0 opacity-80"
+                                style={{ 
+                                    background: lineGradient,
+                                    bottom: '-50px' // Extends past current container to reach the next dot
+                                }}
+                            />
+                        )}
+                    </div>
+
+                    {/* Card Column */}
+                    <div className="flex-grow min-w-0">
+                        {activity.type === 'flight' && activity.flightInfo 
+                            ? <FlightCard activity={activity} onClick={() => openEditModal(activity)} /> 
+                            : <ActivityCard activity={activity} onClick={() => openEditModal(activity)} />
+                        }
+                    </div>
+                </div>
+              );
             })}
           </div>
         )}
@@ -803,19 +786,48 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       {showAddModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
-             {/* ... Modal content unchanged ... */}
+             
+             {/* Header with Close */}
              <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">{editingActivityId ? '編輯行程' : (modalMode === 'PLAN' ? '規劃行程' : '新增航班資訊')}</h3>
+                 <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">{editingActivityId ? '編輯項目' : '新增項目'}</h3>
                  <button onClick={closeModal} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+             </div>
+
+             {/* Mode Toggle Switch - Glassmorphism Style */}
+             <div className="bg-slate-100/80 dark:bg-white/5 p-1.5 rounded-[20px] flex relative h-14 items-center backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-inner mb-6 shrink-0">
+                <div 
+                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[16px] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg backdrop-blur-md
+                    ${modalMode === 'PLAN' 
+                        ? 'left-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-purple-500/30' 
+                        : 'left-[50%] bg-gradient-to-r from-sky-400 to-blue-500 shadow-blue-500/30'}
+                    `}
+                ></div>
+                
+                <button 
+                    type="button"
+                    onClick={() => setModalMode('PLAN')} 
+                    className={`flex-1 relative z-10 font-bold text-sm transition-colors duration-300 flex items-center justify-center gap-2 ${modalMode === 'PLAN' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                >
+                    <MapIcon className="w-4 h-4" /> 
+                    一般行程
+                </button>
+                <button 
+                    type="button"
+                    onClick={() => setModalMode('FLIGHT')} 
+                    className={`flex-1 relative z-10 font-bold text-sm transition-colors duration-300 flex items-center justify-center gap-2 ${modalMode === 'FLIGHT' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                >
+                    <PlaneIcon className="w-4 h-4" /> 
+                    航班資訊
+                </button>
              </div>
              
              <div className="flex-grow overflow-y-auto no-scrollbar space-y-4 pb-4">
              {modalMode === 'PLAN' ? (
-                 <div className="space-y-4">
+                 <div className="space-y-4 animate-fade-in">
                     <div className="relative p-1 rounded-2xl bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 backdrop-blur-xl flex h-14 shadow-inner mb-6">
                         <div className={`absolute top-1 bottom-1 w-[calc(33.33%-4px)] rounded-xl bg-white dark:bg-[#374151] border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0`} style={{ left: newActivity.type === 'sightseeing' ? '4px' : newActivity.type === 'food' ? 'calc(33.33% + 2px)' : 'calc(66.66%)' }}></div>
                         <button onClick={() => setNewActivity({...newActivity, type: 'sightseeing'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'sightseeing' ? 'text-purple-500 dark:text-purple-400' : 'text-slate-400'}`}><CameraIcon className="w-4 h-4" /> 觀光</button>
-                        <button onClick={() => setNewActivity({...newActivity, type: 'food'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'food' ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'}`}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg> 美食</button>
+                        <button onClick={() => setNewActivity({...newActivity, type: 'food'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'food' ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'}`}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.008v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg> 美食</button>
                         <button onClick={() => setNewActivity({...newActivity, type: 'transport'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'transport' ? 'text-yellow-500 dark:text-yellow-400' : 'text-slate-400'}`}><BusIcon className="w-4 h-4" /> 交通</button>
                     </div>
                     <div><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">行程名稱</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><TagIcon className="w-5 h-5" /></span><input type="text" placeholder="例如：參觀東京鐵塔" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.title} onChange={e => setNewActivity({...newActivity, title: e.target.value})} /></div></div>
@@ -823,7 +835,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                     <div><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">地點 (輸入可跳轉地圖)</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><MapIcon className="w-5 h-5" /></span><input type="text" placeholder="輸入具體地址或地標" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} /></div></div>
                  </div>
              ) : (
-                 <div className="space-y-6">
+                 <div className="space-y-6 animate-fade-in">
                      <div className="grid grid-cols-2 gap-4">
                          <div>
                              <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">航班編號</label>
