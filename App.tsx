@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Trip, Tab, TripType, Stop } from './types';
 import ItineraryTool from './components/ItineraryTool';
 import PackingTool from './components/PackingTool';
@@ -15,7 +15,8 @@ const CHANGELOG_DATA = [
         items: [
             "優化：修復底部導航列滑動指示器對齊問題",
             "優化：建立旅程頁面視覺與佈局調整",
-            "修正：多城市行程卡片樣式優化"
+            "修正：多城市行程卡片樣式優化",
+            "新增：匯出行程即時更新功能"
         ]
     },
     {
@@ -101,7 +102,7 @@ function App() {
   
   // Export Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [exportContent, setExportContent] = useState('');
+  // Removed exportContent state, replaced with useMemo below
   const [copySuccess, setCopySuccess] = useState(false);
   
   // Edit Trip Form State
@@ -207,7 +208,8 @@ function App() {
     }
   };
 
-  const generateExportText = () => {
+  // Real-time Export Content Generation
+  const exportContent = useMemo(() => {
       if (!tripData) return '';
 
       let content = `🌍 ${tripData.name}\n`;
@@ -257,12 +259,10 @@ function App() {
       }
       
       return content;
-  };
+  }, [tripData]);
 
   const handleOpenExport = () => {
       if (!tripData) return;
-      const content = generateExportText();
-      setExportContent(content);
       setIsExportModalOpen(true);
       setCopySuccess(false);
   };
