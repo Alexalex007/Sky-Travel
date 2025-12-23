@@ -852,7 +852,26 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                         <button onClick={() => setNewActivity({...newActivity, type: 'transport'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'transport' ? 'text-yellow-500 dark:text-yellow-400' : 'text-slate-400'}`}><BusIcon className="w-4 h-4" /> 交通</button>
                     </div>
                     <div><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">行程名稱</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><TagIcon className="w-5 h-5" /></span><input type="text" placeholder="例如：參觀東京鐵塔" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.title} onChange={e => setNewActivity({...newActivity, title: e.target.value})} /></div></div>
-                    <div className="flex gap-4"><div className="flex-1"><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">開始時間</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><ClockIcon className="w-5 h-5" /></span><input type="time" className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold appearance-none" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} /></div></div><div className="flex-1"><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">預計停留</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl px-4 py-3.5 flex items-center gap-3 h-[58px]"><span className="text-slate-400"><ClockIcon className="w-5 h-5" /></span><select className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold text-sm" value={newActivity.duration} onChange={e => setNewActivity({...newActivity, duration: e.target.value})}>{Array.from({ length: 36 }, (_, i) => (i + 1) * 0.5).map(val => (<option key={val} value={`${val}h`} className="bg-white dark:bg-[#1f2937]">{val}h</option>))}</select></div></div></div>
+                    
+                    <div className="flex gap-4">
+                        <div className="flex-1">
+                            <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">開始時間</label>
+                            <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl px-4 flex items-center gap-3 h-[58px]">
+                                <span className="text-slate-400"><ClockIcon className="w-5 h-5" /></span>
+                                <input type="time" className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold appearance-none" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} />
+                            </div>
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">預計停留</label>
+                            <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl px-4 flex items-center gap-3 h-[58px]">
+                                <span className="text-slate-400"><HourglassIcon className="w-5 h-5" /></span>
+                                <select className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold text-sm" value={newActivity.duration} onChange={e => setNewActivity({...newActivity, duration: e.target.value})}>
+                                    {Array.from({ length: 36 }, (_, i) => (i + 1) * 0.5).map(val => (<option key={val} value={`${val}h`} className="bg-white dark:bg-[#1f2937]">{val}h</option>))}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <div><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">地點 (輸入可跳轉地圖)</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><MapIcon className="w-5 h-5" /></span><input type="text" placeholder="輸入具體地址或地標" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} /></div></div>
                  </div>
              ) : (
