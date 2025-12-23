@@ -7,8 +7,17 @@ import ExpensesTool from './components/FoodTool';
 import ToolboxTool from './components/PhraseTool';
 import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, GlobeIcon, SparklesIcon, ClipboardDocumentListIcon, ArchiveBoxArrowDownIcon, TrashIcon, XMarkIcon, ArchiveIcon, RefreshIcon, ArrowDownTrayIcon, DocumentDuplicateIcon, CheckIcon } from './components/Icons';
 
-const APP_VERSION = "v4.0.6";
+const APP_VERSION = "v4.0.7";
 const CHANGELOG_DATA = [
+    {
+        version: "v4.0.7",
+        date: "2025-12-23",
+        items: [
+            "優化：修復底部導航列滑動指示器對齊問題",
+            "優化：建立旅程頁面視覺與佈局調整",
+            "修正：多城市行程卡片樣式優化"
+        ]
+    },
     {
         version: "v4.0.6",
         date: "2025-12-22",
@@ -968,8 +977,8 @@ function App() {
                  <div 
                     className="absolute top-2 bottom-2 rounded-[24px] bg-white dark:bg-white/10 shadow-md transition-all duration-300 ease-out z-0"
                     style={{ 
-                        left: `calc(${(activeIndex * 20)}% + 8px)`, 
-                        width: `calc(20% - 16px)` 
+                        left: `calc(8px + (100% - 16px) * ${activeIndex} / 5)`, 
+                        width: `calc((100% - 16px) / 5)` 
                     }}
                  />
 
