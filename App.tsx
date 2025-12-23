@@ -5,7 +5,7 @@ import ItineraryTool from './components/ItineraryTool';
 import PackingTool from './components/PackingTool';
 import ExpensesTool from './components/FoodTool';
 import ToolboxTool from './components/PhraseTool';
-import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, GlobeIcon, SparklesIcon, ClipboardDocumentListIcon, ArchiveBoxArrowDownIcon, TrashIcon, XMarkIcon, ArchiveIcon, RefreshIcon } from './components/Icons';
+import { MapIcon, WalletIcon, SuitcaseIcon, GridIcon, CogIcon, PlaneIcon, ChevronLeftIcon, UsersIcon, MoonIcon, SunIcon, EditIcon, ShareIcon, ChevronRightIcon, PlusIcon, TagIcon, CalendarIcon, GlobeIcon, SparklesIcon, ClipboardDocumentListIcon, ArchiveBoxArrowDownIcon, TrashIcon, XMarkIcon, ArchiveIcon, RefreshIcon, ArrowDownTrayIcon, DocumentDuplicateIcon, CheckIcon } from './components/Icons';
 
 const APP_VERSION = "v4.0.6";
 const CHANGELOG_DATA = [
@@ -89,6 +89,11 @@ function App() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isArchiveConfirmOpen, setIsArchiveConfirmOpen] = useState(false);
   const [showArchivedList, setShowArchivedList] = useState(false);
+  
+  // Export Modal State
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportContent, setExportContent] = useState('');
+  const [copySuccess, setCopySuccess] = useState(false);
   
   // Edit Trip Form State
   const [editTripData, setEditTripData] = useState<{
@@ -191,6 +196,85 @@ function App() {
     } else {
         alert('您的裝置不支援原生分享功能，請手動複製網址。');
     }
+  };
+
+  const generateExportText = () => {
+      if (!tripData) return '';
+
+      let content = `🌍 ${tripData.name}\n`;
+      content += `📍 目的地: ${tripData.destination}\n`;
+      content += `📅 日期: ${tripData.startDate} 至 ${tripData.endDate}\n`;
+      content += `----------------------------------------\n\n`;
+
+      if (tripData.type === 'Multi' && tripData.stops) {
+          content += `🗺️ 多城市行程:\n`;
+          tripData.stops.forEach((stop, idx) => {
+              content += `${idx + 1}. ${stop.destination} (${stop.startDate} - ${stop.endDate})\n`;
+          });
+          content += `\n`;
+      }
+
+      content += `📋 行程規劃:\n`;
+      const dates = Object.keys(tripData.activities).sort();
+      dates.forEach(date => {
+          const dayActivities = tripData.activities[date];
+          if (dayActivities && dayActivities.length > 0) {
+              content += `\n[${date}]\n`;
+              dayActivities.forEach(act => {
+                  const time = act.type === 'flight' && act.flightInfo ? act.flightInfo.departureTime : act.time;
+                  content += `${time} - ${act.title} ${act.location ? `(@${act.location})` : ''}\n`;
+              });
+          }
+      });
+
+      content += `\n----------------------------------------\n`;
+      content += `💰 消費紀錄:\n`;
+      tripData.expenses.forEach(exp => {
+          content += `${exp.date} | ${exp.title}: ${exp.currency} ${exp.amount} (${exp.category})\n`;
+      });
+
+      content += `\n----------------------------------------\n`;
+      content += `🧳 打包清單:\n`;
+      const unchecked = tripData.packingList.filter(i => !i.checked);
+      const checked = tripData.packingList.filter(i => i.checked);
+      
+      if (unchecked.length > 0) {
+          content += `\n[未完成]\n`;
+          unchecked.forEach(item => content += `☐ ${item.name}\n`);
+      }
+      if (checked.length > 0) {
+          content += `\n[已完成]\n`;
+          checked.forEach(item => content += `☑ ${item.name}\n`);
+      }
+      
+      return content;
+  };
+
+  const handleOpenExport = () => {
+      if (!tripData) return;
+      const content = generateExportText();
+      setExportContent(content);
+      setIsExportModalOpen(true);
+      setCopySuccess(false);
+  };
+
+  const handleCopyToClipboard = () => {
+      navigator.clipboard.writeText(exportContent).then(() => {
+          setCopySuccess(true);
+          setTimeout(() => setCopySuccess(false), 2000);
+      });
+  };
+
+  const handleDownloadFile = () => {
+      if (!tripData) return;
+      const blob = new Blob([exportContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${tripData.name}_export.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
   };
 
   const openEditModal = () => {
@@ -491,6 +575,22 @@ function App() {
 
            <div 
              className="glass-card p-4 rounded-[24px] flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1e293b] transition-colors cursor-pointer active:scale-[0.98]"
+             onClick={handleOpenExport}
+           >
+               <div className="flex items-center gap-4">
+                   <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-500 dark:bg-blue-500/20 dark:text-blue-400 flex items-center justify-center">
+                       <ArrowDownTrayIcon className="w-5 h-5" />
+                   </div>
+                   <div>
+                       <h3 className="font-bold text-sm text-slate-800 dark:text-white">匯出行程</h3>
+                       <p className="text-[10px] font-bold text-slate-500">複製或下載純文字行程</p>
+                   </div>
+               </div>
+               <ChevronRightIcon className="w-4 h-4 text-slate-600" />
+           </div>
+
+           <div 
+             className="glass-card p-4 rounded-[24px] flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1e293b] transition-colors cursor-pointer active:scale-[0.98]"
              onClick={() => setIsArchiveConfirmOpen(true)}
            >
                <div className="flex items-center gap-4">
@@ -633,455 +733,415 @@ function App() {
               <div className="h-1 w-12 bg-[#38bdf8] mx-auto rounded-full"></div>
           </div>
           
-          {savedTrip ? (
-             <div className="space-y-4 animate-fade-in-up">
-                 {/* Saved Trip Card */}
-                 <div 
-                    onClick={handleContinueTrip}
-                    className="glass-card p-5 rounded-[28px] border hover:border-[#38bdf8]/50 cursor-pointer group transition-all duration-300 transform hover:-translate-y-1 shadow-xl relative overflow-hidden text-left border-white/50 dark:border-white/10"
-                 >
-                    <div className="absolute top-0 left-0 w-1 h-full bg-[#38bdf8]"></div>
-                    <div className="flex justify-between items-start mb-3">
-                        <div>
-                            <div className="text-[#38bdf8] text-[10px] font-bold uppercase tracking-widest mb-1">CURRENT TRIP</div>
-                            <h3 className="text-slate-900 dark:text-white text-xl font-black">{savedTrip.name}</h3>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-[#38bdf8]/10 flex items-center justify-center text-[#38bdf8] group-hover:bg-[#38bdf8] group-hover:text-white transition-colors">
-                            <ChevronRightIcon className="w-5 h-5" />
-                        </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 text-sm text-slate-500">
-                        <div className="flex items-center gap-1.5">
-                            <MapIcon className="w-4 h-4" />
-                            <span className="font-bold truncate max-w-[120px]">{savedTrip.destination}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <CalendarIcon className="w-4 h-4" />
-                            <span className="font-bold font-mono text-xs">{savedTrip.startDate}</span>
-                        </div>
-                    </div>
-                 </div>
-
-                 {/* New Trip Button (Secondary) */}
-                 <button 
-                    onClick={() => setView('CREATE')}
-                    className="text-slate-500 hover:text-slate-900 dark:hover:text-white font-bold text-sm py-3 flex items-center justify-center gap-2 w-full transition-colors"
-                 >
-                    <PlusIcon className="w-4 h-4" />
-                    建立新旅程
-                 </button>
-             </div>
-          ) : (
-             <>
-                <button 
-                    onClick={() => setView('CREATE')}
-                    className="group relative inline-flex items-center justify-center px-8 py-5 font-black text-white transition-all duration-200 bg-[#38bdf8] rounded-2xl focus:outline-none hover:bg-[#0ea5e9] w-full max-w-[240px] shadow-[0_10px_40px_rgba(56,189,248,0.4)] mt-12 text-lg active:scale-95"
-                >
-                    新增旅程
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"><path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" /></svg>
-                </button>
-             </>
-          )}
+          <div className="mt-12 space-y-4 w-full">
+            {savedTrip && (
+              <button
+                onClick={handleContinueTrip}
+                className="w-full py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-slate-800 dark:text-white font-bold text-lg hover:bg-white/20 transition-all shadow-lg flex items-center justify-center gap-3 group animate-slide-up"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                繼續旅程：{savedTrip.destination.split(' - ')[0]}
+              </button>
+            )}
+            
+            <button
+              onClick={() => setView('CREATE')}
+              className="w-full py-4 bg-[#38bdf8] text-white rounded-2xl font-black text-lg shadow-lg shadow-blue-500/30 hover:bg-[#0ea5e9] transition-all flex items-center justify-center gap-2 active:scale-95 animate-slide-up"
+              style={{ animationDelay: '0.1s' }}
+            >
+              <PlusIcon className="w-6 h-6 stroke-[3]" />
+              開啟新旅程
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Create View
   if (view === 'CREATE') {
     return (
-      <div className="h-full flex flex-col p-6 bg-transparent transition-colors duration-300">
-        <div className="flex items-center gap-4 mb-4">
-            <button onClick={() => setView('HOME')} className="w-10 h-10 rounded-2xl flex items-center justify-center border shadow-sm transition-colors bg-white border-slate-200 text-slate-500 hover:bg-slate-50 dark:bg-[#1e293b] dark:border-white/5 dark:text-slate-400 dark:hover:bg-[#334155]">
-              <ChevronLeftIcon className="w-5 h-5" />
-            </button>
+      <div className="h-full flex flex-col p-6 bg-transparent animate-fade-in relative">
+        <div className="mb-8">
+           <div className="flex items-center gap-4 mb-2">
+                <button onClick={() => setView('HOME')} className="w-10 h-10 rounded-2xl flex items-center justify-center border shadow-sm transition-colors bg-white border-slate-200 text-slate-500 hover:bg-slate-50 dark:bg-[#1e293b] dark:border-white/5 dark:text-slate-400 dark:hover:bg-[#334155]">
+                    <ChevronLeftIcon className="w-5 h-5" />
+                </button>
+                <h2 className="text-3xl font-black text-slate-900 dark:text-white">建立新旅程</h2>
+           </div>
+           <p className="text-sm font-bold text-slate-500 ml-14">規劃您的下一場冒險</p>
         </div>
         
-        <h2 className="text-3xl font-black mb-1 text-slate-900 dark:text-white">建立新旅程</h2>
-        <p className="text-slate-500 text-sm font-bold mb-6">規劃您的下一場冒險</p>
-        
-        <form onSubmit={handleCreateTrip} className={`flex-grow flex flex-col ${tripType === 'Single' ? 'overflow-hidden space-y-5' : 'overflow-y-auto space-y-6'} no-scrollbar pb-6`}>
-             
-             {/* Toggle */}
-             <div className="relative p-1 rounded-2xl bg-white border-slate-200 dark:bg-[#111827]/80 dark:border-white/10 border backdrop-blur-xl flex h-16 shadow-inner overflow-hidden flex-shrink-0">
-                 <div 
-                    className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-slate-100 border-slate-200 dark:bg-[#1e293b] dark:border-white/10 border shadow-[0_0_15px_rgba(56,189,248,0.15)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0 ${tripType === 'Single' ? 'left-1' : 'left-[50%]'}`}
-                 ></div>
-                 <button 
+        <form onSubmit={handleCreateTrip} className="flex-grow space-y-6 overflow-y-auto no-scrollbar pb-32">
+            
+            {/* Trip Type Toggle - Large Blocky Style with Glass Effect */}
+            <div className="bg-[#1e293b]/50 p-1.5 rounded-[24px] flex relative h-20 items-center backdrop-blur-xl border border-white/5 shadow-inner">
+                <div 
+                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[20px] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg border border-white/10
+                    ${tripType === 'Single' 
+                        ? 'left-1.5 bg-[#1e293b] shadow-black/20' 
+                        : 'left-[50%] bg-[#1e293b] shadow-black/20'}
+                    `}
+                ></div>
+                
+                <button 
                     type="button"
-                    onClick={() => setTripType('Single')}
-                    className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors duration-300 ${tripType === 'Single' ? 'text-[#38bdf8]' : 'text-slate-500'}`}
-                 >
-                    <MapIcon className="w-5 h-5" /> 單一城市
-                 </button>
-                 <button 
+                    onClick={() => setTripType('Single')} 
+                    className={`flex-1 relative z-10 font-bold transition-colors duration-300 flex items-center justify-center gap-2 h-full rounded-[20px] ${tripType === 'Single' ? 'text-white bg-white/5' : 'text-slate-500'}`}
+                >
+                    <MapIcon className="w-5 h-5" /> 
+                    <span className="text-base">單一城市</span>
+                </button>
+                <button 
                     type="button"
-                    onClick={() => setTripType('Multi')}
-                    className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors duration-300 ${tripType === 'Multi' ? 'text-[#a78bfa]' : 'text-slate-500'}`}
-                 >
-                    <GlobeIcon className="w-5 h-5" /> 多城市漫遊
-                 </button>
-             </div>
+                    onClick={() => setTripType('Multi')} 
+                    className={`flex-1 relative z-10 font-bold transition-colors duration-300 flex items-center justify-center gap-2 h-full rounded-[20px] ${tripType === 'Multi' ? 'text-[#a78bfa] bg-white/5' : 'text-slate-500'}`}
+                >
+                    <GlobeIcon className="w-5 h-5" /> 
+                    <span className="text-base">多城市漫遊</span>
+                </button>
+            </div>
 
-             <div className="space-y-2">
-                <label className="text-slate-500 text-xs font-bold ml-1">旅程名稱 (選填)</label>
-                <div className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-2xl p-4 flex items-center gap-3 shadow-lg">
-                    <span className="text-[#38bdf8]"><TagIcon className="w-5 h-5" /></span>
+            {/* Trip Name */}
+            <div>
+                <label className="text-xs font-bold text-slate-500 ml-1 mb-2 block">旅程名稱 (選填)</label>
+                <div className="bg-[#1e293b] border border-white/5 p-5 rounded-[24px] flex items-center gap-3 shadow-lg">
+                    <TagIcon className="w-6 h-6 text-[#38bdf8]" />
                     <input 
+                        required
                         type="text" 
-                        className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg"
-                        placeholder="例如：2025 東京行"
+                        placeholder="例如：2025 東京行" 
                         value={tripName}
                         onChange={e => setTripName(e.target.value)}
+                        className="bg-transparent w-full font-bold text-lg text-white placeholder-slate-600 focus:outline-none"
                     />
                 </div>
-             </div>
+            </div>
 
-             {/* Single Destination Input */}
-             {tripType === 'Single' && (
-                 <div className="space-y-3 animate-fade-in-up">
-                     <label className="text-slate-500 text-xs font-bold ml-1">目的地</label>
-                     <div className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-2xl p-5 flex items-center gap-3 shadow-xl">
-                        <span className="text-[#38bdf8]"><MapIcon className="w-6 h-6" /></span>
-                        <input 
-                            type="text" 
-                            className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg"
-                            placeholder="例如：東京"
-                            value={singleDestination}
-                            onChange={e => setSingleDestination(e.target.value)}
-                        />
-                     </div>
-                     <div className="grid grid-cols-2 gap-4 mt-2">
-                        <div>
-                            <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">抵達日期</label>
-                            <div className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-2xl p-4 shadow-lg">
-                                <input type="date" className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none" value={singleStartDate} onChange={e => setSingleStartDate(e.target.value)} />
-                            </div>
+            {tripType === 'Single' ? (
+                <>
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 ml-1 mb-2 block">目的地</label>
+                        <div className="bg-[#1e293b] border border-white/5 p-5 rounded-[24px] flex items-center gap-3 shadow-lg">
+                            <MapIcon className="w-6 h-6 text-[#38bdf8]" />
+                            <input 
+                                required
+                                type="text" 
+                                placeholder="例如：東京" 
+                                value={singleDestination}
+                                onChange={e => setSingleDestination(e.target.value)}
+                                className="bg-transparent w-full font-bold text-lg text-white placeholder-slate-600 focus:outline-none"
+                            />
                         </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">離開日期</label>
-                            <div className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-2xl p-4 shadow-lg">
-                                <input type="date" className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none" value={singleEndDate} onChange={e => setSingleEndDate(e.target.value)} />
-                            </div>
-                        </div>
-                     </div>
-                 </div>
-             )}
-
-             {/* Multi City Logic */}
-             {tripType === 'Multi' && (
-                 <div className="space-y-4 animate-fade-in-up">
-                    {stops.map((stop, idx) => (
-                        <div key={stop.id} className="bg-white border-slate-200 dark:bg-[#111827] dark:border-white/10 border rounded-[28px] p-5 shadow-xl mb-4 flex gap-4">
-                            <div className="w-8 h-8 rounded-full bg-[#38bdf8] text-white flex items-center justify-center font-bold text-sm flex-shrink-0 mt-1">{stop.id}</div>
-                            <div className="flex-grow min-w-0">
+                            <label className="text-xs font-bold text-slate-500 ml-1 mb-2 block">開始日期</label>
+                            <div className="bg-[#1e293b] border border-white/5 p-5 rounded-[24px] shadow-lg">
                                 <input 
-                                    type="text" 
-                                    className="bg-transparent w-full text-slate-900 dark:text-white font-bold text-lg focus:outline-none mb-4" 
-                                    placeholder="城市名稱"
-                                    value={stop.destination}
-                                    onChange={e => handleStopChange(stop.id, 'destination', e.target.value)}
+                                    required
+                                    type="date" 
+                                    value={singleStartDate}
+                                    onChange={e => setSingleStartDate(e.target.value)}
+                                    className="bg-transparent w-full font-bold text-white focus:outline-none"
                                 />
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">抵達日期</label>
-                                        <input type="date" className="w-full bg-slate-100 dark:bg-[#1f2937] rounded-xl p-3 text-sm text-slate-900 dark:text-white font-bold focus:outline-none" value={stop.startDate} onChange={e => handleStopChange(stop.id, 'startDate', e.target.value)} />
-                                    </div>
-                                    <div>
-                                        <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">離開日期</label>
-                                        <input type="date" className="w-full bg-slate-100 dark:bg-[#1f2937] rounded-xl p-3 text-sm text-slate-900 dark:text-white font-bold focus:outline-none" value={stop.endDate} onChange={e => handleStopChange(stop.id, 'endDate', e.target.value)} />
-                                    </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-slate-500 ml-1 mb-2 block">結束日期</label>
+                            <div className="bg-[#1e293b] border border-white/5 p-5 rounded-[24px] shadow-lg">
+                                <input 
+                                    required
+                                    type="date" 
+                                    value={singleEndDate}
+                                    onChange={e => setSingleEndDate(e.target.value)}
+                                    className="bg-transparent w-full font-bold text-white focus:outline-none"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </>
+            ) : (
+                <div className="space-y-4">
+                    {stops.map((stop, index) => (
+                        <div key={stop.id} className="p-6 rounded-[32px] border border-white/5 bg-[#0f172a] shadow-xl relative overflow-hidden group">
+                            {/* Background decoration */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#38bdf8]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+                            {/* Header Row: Number + City Input */}
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-10 h-10 rounded-full bg-[#38bdf8] text-[#0f172a] flex items-center justify-center font-black text-lg shadow-lg shadow-blue-500/20 shrink-0">
+                                    {index + 1}
+                                </div>
+                                <div className="flex-grow">
+                                    <label className="text-[10px] font-bold text-slate-500 mb-1 block">城市名稱</label>
+                                    <input 
+                                        required
+                                        type="text" 
+                                        placeholder="輸入城市" 
+                                        value={stop.destination}
+                                        onChange={e => handleStopChange(stop.id, 'destination', e.target.value)}
+                                        className="w-full bg-transparent font-black text-2xl text-white focus:outline-none placeholder-slate-700"
+                                    />
+                                </div>
+                                {stops.length > 1 && (
+                                    <button type="button" onClick={() => handleRemoveStop(stop.id)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                                        <TrashIcon className="w-5 h-5" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Date Inputs Row */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-[#1e293b] p-4 rounded-2xl border border-white/5">
+                                    <label className="text-[10px] font-bold text-slate-500 mb-1 block">抵達日期</label>
+                                    <input 
+                                        required
+                                        type="date" 
+                                        value={stop.startDate}
+                                        onChange={e => handleStopChange(stop.id, 'startDate', e.target.value)}
+                                        className="w-full bg-transparent font-bold text-white focus:outline-none text-sm"
+                                    />
+                                </div>
+                                <div className="bg-[#1e293b] p-4 rounded-2xl border border-white/5">
+                                    <label className="text-[10px] font-bold text-slate-500 mb-1 block">離開日期</label>
+                                    <input 
+                                        required
+                                        type="date" 
+                                        value={stop.endDate}
+                                        onChange={e => handleStopChange(stop.id, 'endDate', e.target.value)}
+                                        className="w-full bg-transparent font-bold text-white focus:outline-none text-sm"
+                                    />
                                 </div>
                             </div>
                         </div>
                     ))}
-                    <button type="button" onClick={handleAddStop} className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-[24px] text-slate-500 font-bold">+ 新增下一站</button>
-                 </div>
-             )}
-
-            <button 
-                type="submit"
-                className="w-full py-5 bg-[#334155] text-white font-black text-lg rounded-3xl hover:bg-[#38bdf8] shadow-lg transition-colors flex items-center justify-center gap-2 mt-auto flex-shrink-0"
-            >
-                <ChevronRightIcon className="w-5 h-5" />
-                開始規劃
-            </button>
+                    {stops.length < 6 && (
+                        <button 
+                            type="button" 
+                            onClick={handleAddStop}
+                            className="w-full py-5 border-2 border-dashed border-slate-700 rounded-[32px] text-slate-400 font-bold hover:bg-white/5 hover:border-slate-500 transition-all flex items-center justify-center gap-2"
+                        >
+                            <PlusIcon className="w-5 h-5" /> 新增下一站
+                        </button>
+                    )}
+                </div>
+            )}
+            
+            {/* Submit Button - Fixed at bottom for easy access */}
+            <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#05080F] to-transparent pt-12 z-20">
+                <button 
+                    type="submit"
+                    className="w-full py-5 bg-[#38bdf8] text-white rounded-[24px] font-black text-xl shadow-lg shadow-blue-500/20 hover:bg-[#0ea5e9] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                    <ChevronRightIcon className="w-6 h-6 stroke-[3]" />
+                    開始規劃
+                </button>
+            </div>
         </form>
       </div>
     );
   }
 
-  // TRIP VIEW
   return (
-    <div className="h-full bg-transparent relative transition-colors duration-300">
-      {/* Main Content Area - Remove extra padding to let children control it */}
-      <div className="h-full overflow-hidden pb-0"> 
-        {activeTab === Tab.ITINERARY && tripData && (
-          <ItineraryTool 
-             trip={tripData} 
-             onUpdateTrip={setTripData} 
-             isDarkMode={isDarkMode}
-             toggleTheme={() => setIsDarkMode(!isDarkMode)}
-          />
+    <div className="h-full flex flex-col bg-transparent relative overflow-hidden">
+        {/* Dynamic Background for App */}
+        <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-0">
+            <div className="home-orb orb-1 opacity-20"></div>
+            <div className="home-orb orb-2 opacity-20"></div>
+            <div className="home-stars opacity-50"></div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-grow overflow-hidden z-10 relative">
+            {activeTab === Tab.SETTINGS && <SettingsView />}
+            {activeTab === Tab.ITINERARY && tripData && <ItineraryTool trip={tripData} onUpdateTrip={setTripData} isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />}
+            {activeTab === Tab.EXPENSES && tripData && <ExpensesTool trip={tripData} onUpdateTrip={setTripData} />}
+            {activeTab === Tab.PACKING && tripData && <PackingTool trip={tripData} onUpdateTrip={setTripData} />}
+            {activeTab === Tab.TOOLBOX && tripData && <ToolboxTool trip={tripData} onUpdateTrip={setTripData} />}
+        </div>
+
+        {/* Bottom Navigation */}
+        <div className={`flex-shrink-0 z-50 px-6 pb-6 pt-2 relative ${showBottomBlur ? 'bg-gradient-to-t from-white via-white/80 to-transparent dark:from-[#05080F] dark:via-[#05080F]/80' : ''}`}>
+             <div className="bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-[32px] shadow-2xl flex items-center justify-between p-2 relative h-[72px]">
+                 
+                 {/* Sliding Background Indicator */}
+                 <div 
+                    className="absolute top-2 bottom-2 rounded-[24px] bg-white dark:bg-white/10 shadow-md transition-all duration-300 ease-out z-0"
+                    style={{ 
+                        left: `calc(${(activeIndex * 20)}% + 8px)`, 
+                        width: `calc(20% - 16px)` 
+                    }}
+                 />
+
+                 {tabs.map((tab) => {
+                     const isActive = activeTab === tab;
+                     return (
+                         <button
+                             key={tab}
+                             onClick={() => setActiveTab(tab)}
+                             className={`relative flex-1 h-full flex items-center justify-center gap-1 transition-all duration-300 rounded-[24px] z-10 ${isActive ? 'text-[#38bdf8]' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                         >
+                             <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'scale-100'}`}>
+                                 {tab === Tab.ITINERARY && <GridIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
+                                 {tab === Tab.EXPENSES && <WalletIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
+                                 {tab === Tab.PACKING && <SuitcaseIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
+                                 {tab === Tab.TOOLBOX && <SparklesIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
+                                 {tab === Tab.SETTINGS && <CogIcon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />}
+                             </div>
+                         </button>
+                     );
+                 })}
+             </div>
+        </div>
+        
+        {/* Render Global Modals */}
+
+        {isDeleteConfirmOpen && (
+             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                 <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] p-6 shadow-2xl border border-slate-200 dark:border-white/10 animate-scale-in text-center">
+                     <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/20 text-red-500 mx-auto flex items-center justify-center mb-4">
+                         <TrashIcon className="w-8 h-8" />
+                     </div>
+                     <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">確定要刪除旅程？</h3>
+                     <p className="text-sm text-slate-500 mb-6">所有的行程、記帳與清單資料將會永久消失，無法復原。</p>
+                     <div className="flex gap-3">
+                         <button onClick={() => setIsDeleteConfirmOpen(false)} className="flex-1 py-3 rounded-2xl font-bold bg-slate-100 dark:bg-[#1e293b] text-slate-500">取消</button>
+                         <button onClick={handleDeleteTrip} className="flex-1 py-3 rounded-2xl font-bold bg-red-500 text-white shadow-lg shadow-red-500/30">確認刪除</button>
+                     </div>
+                 </div>
+             </div>
         )}
-        {activeTab === Tab.PACKING && tripData && (
-          <PackingTool trip={tripData} onUpdateTrip={setTripData} />
+
+        {isArchiveConfirmOpen && (
+             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                 <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] p-6 shadow-2xl border border-slate-200 dark:border-white/10 animate-scale-in text-center">
+                     <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-500/20 text-slate-500 dark:text-slate-300 mx-auto flex items-center justify-center mb-4">
+                         <ArchiveBoxArrowDownIcon className="w-8 h-8" />
+                     </div>
+                     <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">確定要封存旅程？</h3>
+                     <p className="text-sm text-slate-500 mb-6">目前的旅程將移至歷史紀錄，您可以隨時在首頁還原。</p>
+                     <div className="flex gap-3">
+                         <button onClick={() => setIsArchiveConfirmOpen(false)} className="flex-1 py-3 rounded-2xl font-bold bg-slate-100 dark:bg-[#1e293b] text-slate-500">取消</button>
+                         <button onClick={handleArchiveTrip} className="flex-1 py-3 rounded-2xl font-bold bg-slate-800 dark:bg-white text-white dark:text-slate-900 shadow-lg">確認封存</button>
+                     </div>
+                 </div>
+             </div>
         )}
-        {activeTab === Tab.EXPENSES && tripData && (
-          <ExpensesTool trip={tripData} onUpdateTrip={setTripData} />
+        
+        {isEditTripOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] p-6 shadow-2xl border border-slate-200 dark:border-white/10 animate-slide-up flex flex-col max-h-[90vh]">
+                     <div className="flex justify-between items-center mb-6">
+                         <h3 className="text-xl font-bold text-slate-800 dark:text-white">修改旅程資訊</h3>
+                         <button onClick={() => setIsEditTripOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                             <XMarkIcon className="w-5 h-5" />
+                         </button>
+                     </div>
+                     
+                     <div className="flex-grow overflow-y-auto no-scrollbar space-y-4 pb-4">
+                         {/* Name */}
+                         <div>
+                             <label className="text-xs font-bold text-slate-500 ml-1 mb-1 block">旅程名稱</label>
+                             <input type="text" value={editTripData.name} onChange={e => setEditTripData({...editTripData, name: e.target.value})} className="w-full bg-slate-100 dark:bg-[#1e293b] p-3 rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none" />
+                         </div>
+                         
+                         {tripData?.type === 'Single' ? (
+                             <>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1 mb-1 block">目的地</label>
+                                    <input type="text" value={editTripData.destination} onChange={e => setEditTripData({...editTripData, destination: e.target.value})} className="w-full bg-slate-100 dark:bg-[#1e293b] p-3 rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 ml-1 mb-1 block">開始</label>
+                                        <input type="date" value={editTripData.startDate} onChange={e => setEditTripData({...editTripData, startDate: e.target.value})} className="w-full bg-slate-100 dark:bg-[#1e293b] p-3 rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 ml-1 mb-1 block">結束</label>
+                                        <input type="date" value={editTripData.endDate} onChange={e => setEditTripData({...editTripData, endDate: e.target.value})} className="w-full bg-slate-100 dark:bg-[#1e293b] p-3 rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none" />
+                                    </div>
+                                </div>
+                             </>
+                         ) : (
+                             <div className="space-y-4">
+                                 {editStops.map((stop, idx) => (
+                                     <div key={stop.id} className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5">
+                                         <div className="flex justify-between items-center mb-2">
+                                             <span className="text-[10px] font-bold text-[#38bdf8] uppercase">STOP {idx + 1}</span>
+                                         </div>
+                                         <div className="space-y-2">
+                                             <input type="text" value={stop.destination} onChange={e => handleEditStopChange(stop.id, 'destination', e.target.value)} className="w-full bg-white dark:bg-[#1e293b] p-2 rounded-lg font-bold text-sm" placeholder="城市" />
+                                             <div className="grid grid-cols-2 gap-2">
+                                                 <input type="date" value={stop.startDate} onChange={e => handleEditStopChange(stop.id, 'startDate', e.target.value)} className="w-full bg-white dark:bg-[#1e293b] p-2 rounded-lg font-bold text-xs" />
+                                                 <input type="date" value={stop.endDate} onChange={e => handleEditStopChange(stop.id, 'endDate', e.target.value)} className="w-full bg-white dark:bg-[#1e293b] p-2 rounded-lg font-bold text-xs" />
+                                             </div>
+                                         </div>
+                                     </div>
+                                 ))}
+                                 {editStops.length < 6 && (
+                                     <button onClick={handleAddEditStop} className="w-full py-2 border-2 border-dashed border-slate-300 dark:border-white/10 rounded-xl text-slate-500 font-bold text-sm">+ 增加城市</button>
+                                 )}
+                             </div>
+                         )}
+                     </div>
+                     
+                     <button onClick={handleConfirmEdit} className="w-full py-3 bg-[#38bdf8] text-white rounded-2xl font-bold shadow-lg mt-4">儲存變更</button>
+                </div>
+            </div>
         )}
-        {activeTab === Tab.TOOLBOX && tripData && (
-          <ToolboxTool trip={tripData} onUpdateTrip={setTripData} />
+
+        {isChangelogOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] p-6 shadow-2xl border border-slate-200 dark:border-white/10 animate-slide-up max-h-[80vh] flex flex-col">
+                     <div className="flex justify-between items-center mb-6">
+                         <h3 className="text-xl font-bold text-slate-800 dark:text-white">更新日誌</h3>
+                         <button onClick={() => setIsChangelogOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                             <XMarkIcon className="w-5 h-5" />
+                         </button>
+                     </div>
+                     <div className="flex-grow overflow-y-auto no-scrollbar space-y-6">
+                         {CHANGELOG_DATA.map((log, i) => (
+                             <div key={i} className="relative pl-4 border-l-2 border-slate-200 dark:border-white/10">
+                                 <div className={`absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-[#38bdf8]' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                                 <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-0.5">{log.version} <span className="text-slate-400 text-xs font-normal ml-2">{log.date}</span></h4>
+                                 <ul className="space-y-1.5 mt-2">
+                                     {log.items.map((item, j) => (
+                                         <li key={j} className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-bold">• {item}</li>
+                                     ))}
+                                 </ul>
+                             </div>
+                         ))}
+                     </div>
+                </div>
+            </div>
         )}
-        {activeTab === Tab.SETTINGS && <SettingsView />}
-      </div>
 
-      {/* Global Bottom Gradient Mask for Seamless Scrolling */}
-      <div className={`fixed bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#f0f9ff] via-[#f0f9ff]/90 to-transparent dark:from-[#05080F] dark:via-[#05080F]/90 z-40 pointer-events-none ${showBottomBlur ? 'backdrop-blur-[2px]' : ''}`}></div>
-
-      {/* Floating Bottom Navigation - REFINED STYLE FOR PERFECT BLENDING */}
-      <div className="fixed bottom-6 left-6 right-6 h-[80px] bg-white/40 dark:bg-[#05080F]/40 backdrop-blur-2xl rounded-[32px] border border-white/20 dark:border-white/10 flex items-center px-2 shadow-2xl z-50 transition-colors duration-300">
-        {/* Animated Background Indicator */}
-        <div 
-            className="absolute h-14 w-14 rounded-2xl bg-[#38bdf8] shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] top-1/2 -translate-y-1/2 -translate-x-1/2 z-0"
-            style={{ 
-                left: `calc(8px + ((100% - 16px) / 5 * ${activeIndex}) + ((100% - 16px) / 10))` 
-            }}
-        ></div>
-
-        <div className="flex-1 flex justify-center z-10">
-          <NavIcon 
-            icon={<MapIcon className="w-6 h-6" />} 
-            active={activeTab === Tab.ITINERARY} 
-            onClick={() => setActiveTab(Tab.ITINERARY)} 
-          />
-        </div>
-        <div className="flex-1 flex justify-center z-10">
-          <NavIcon 
-            icon={<WalletIcon className="w-6 h-6" />} 
-            active={activeTab === Tab.EXPENSES} 
-            onClick={() => setActiveTab(Tab.EXPENSES)} 
-          />
-        </div>
-        <div className="flex-1 flex justify-center z-10">
-          <NavIcon 
-            icon={<SuitcaseIcon className="w-6 h-6" />} 
-            active={activeTab === Tab.PACKING} 
-            onClick={() => setActiveTab(Tab.PACKING)} 
-          />
-        </div>
-        <div className="flex-1 flex justify-center z-10">
-          <NavIcon 
-            icon={<SparklesIcon className="w-6 h-6" />} 
-            active={activeTab === Tab.TOOLBOX} 
-            onClick={() => setActiveTab(Tab.TOOLBOX)} 
-          />
-        </div>
-        <div className="flex-1 flex justify-center z-10">
-          <NavIcon 
-            icon={<CogIcon className="w-6 h-6" />} 
-            active={activeTab === Tab.SETTINGS} 
-            onClick={() => setActiveTab(Tab.SETTINGS)} 
-          />
-        </div>
-      </div>
-
-      {/* --- Global Modals --- */}
-      
-      {/* 1. Changelog Modal */}
-      {isChangelogOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-6 animate-fade-in">
-              <div className="bg-white/90 dark:bg-[#0f172a]/90 w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative animate-slide-up backdrop-blur-xl flex flex-col max-h-[80vh]">
-                  <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
-                          <ClipboardDocumentListIcon className="w-6 h-6 text-[#38bdf8]" />
-                          更新日誌
-                      </h3>
-                      <button onClick={() => setIsChangelogOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
-                          <XMarkIcon className="w-5 h-5" />
-                      </button>
-                  </div>
-                  
-                  <div className="flex-grow overflow-y-auto no-scrollbar space-y-6 pr-2">
-                      {CHANGELOG_DATA.map((log, index) => (
-                          <div key={index} className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-700">
-                              <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-[#38bdf8] ring-4 ring-white dark:ring-[#0f172a]"></div>
-                              <div className="mb-2">
-                                  <span className="text-lg font-black text-slate-800 dark:text-white mr-2">{log.version}</span>
-                                  <span className="text-xs font-bold text-slate-400">{log.date}</span>
-                              </div>
-                              <ul className="space-y-2">
-                                  {log.items.map((item, idx) => (
-                                      <li key={idx} className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-                                          • {item}
-                                      </li>
-                                  ))}
-                              </ul>
-                          </div>
-                      ))}
-                  </div>
-                  <div className="pt-6 mt-4 border-t border-slate-100 dark:border-white/5 text-center">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sky Travel {APP_VERSION}</p>
-                  </div>
-              </div>
-          </div>
-      )}
-
-      {/* 2. Edit Trip Modal */}
-      {isEditTripOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-              <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative animate-slide-up flex flex-col max-h-[90vh]">
-                  <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-xl font-bold text-slate-800 dark:text-white">修改旅程資訊</h3>
-                      <button onClick={() => setIsEditTripOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
-                          <XMarkIcon className="w-5 h-5" />
-                      </button>
-                  </div>
-
-                  <div className="flex-grow overflow-y-auto no-scrollbar space-y-4 mb-6">
-                      <div>
-                          <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">旅程名稱</label>
-                          <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
-                              <input 
-                                  type="text" 
-                                  value={editTripData.name}
-                                  onChange={e => setEditTripData({...editTripData, name: e.target.value})}
-                                  className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg" 
-                              />
-                          </div>
-                      </div>
-
-                      {/* Conditional Rendering based on Trip Type */}
-                      {editTripData.type === 'Single' || editStops.length === 0 ? (
-                          <>
-                              <div>
-                                  <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">目的地</label>
-                                  <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
-                                      <input 
-                                          type="text" 
-                                          value={editTripData.destination}
-                                          onChange={e => setEditTripData({...editTripData, destination: e.target.value})}
-                                          className="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-lg" 
-                                      />
-                                  </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">抵達日期</label>
-                                      <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-3">
-                                          <input 
-                                              type="date" 
-                                              value={editTripData.startDate}
-                                              onChange={e => setEditTripData({...editTripData, startDate: e.target.value})}
-                                              className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none text-sm" 
-                                          />
-                                      </div>
-                                  </div>
-                                  <div>
-                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">離開日期</label>
-                                      <div className="bg-slate-100 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl p-3">
-                                          <input 
-                                              type="date" 
-                                              value={editTripData.endDate}
-                                              onChange={e => setEditTripData({...editTripData, endDate: e.target.value})}
-                                              className="bg-transparent w-full text-slate-900 dark:text-white font-bold focus:outline-none text-sm" 
-                                          />
-                                      </div>
-                                  </div>
-                              </div>
-                          </>
-                      ) : (
-                          <div className="space-y-4">
-                              <p className="text-xs font-bold text-slate-500 ml-1">多城市行程細節</p>
-                              {editStops.map((stop, idx) => (
-                                  <div key={stop.id} className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-[24px] p-4 flex gap-4">
-                                      <div className="w-6 h-6 rounded-full bg-[#a78bfa] text-white flex items-center justify-center font-bold text-xs shadow-md border-2 border-white dark:border-[#0f172a] flex-shrink-0 mt-1">{idx + 1}</div>
-                                      <div className="flex-grow min-w-0">
-                                          <input 
-                                              type="text" 
-                                              className="bg-transparent w-full text-slate-900 dark:text-white font-bold text-lg focus:outline-none mb-3" 
-                                              placeholder="城市名稱"
-                                              value={stop.destination}
-                                              onChange={e => handleEditStopChange(stop.id, 'destination', e.target.value)}
-                                          />
-                                          <div className="grid grid-cols-2 gap-3">
-                                              <div>
-                                                  <label className="text-slate-400 text-[10px] font-bold mb-1 block">抵達</label>
-                                                  <input type="date" className="w-full bg-white dark:bg-[#111827] rounded-xl p-2 text-xs text-slate-800 dark:text-slate-200 font-bold focus:outline-none border border-slate-200 dark:border-white/5" value={stop.startDate} onChange={e => handleEditStopChange(stop.id, 'startDate', e.target.value)} />
-                                              </div>
-                                              <div>
-                                                  <label className="text-slate-400 text-[10px] font-bold mb-1 block">離開</label>
-                                                  <input type="date" className="w-full bg-white dark:bg-[#111827] rounded-xl p-2 text-xs text-slate-800 dark:text-slate-200 font-bold focus:outline-none border border-slate-200 dark:border-white/5" value={stop.endDate} onChange={e => handleEditStopChange(stop.id, 'endDate', e.target.value)} />
-                                              </div>
-                                          </div>
-                                      </div>
-                                  </div>
-                              ))}
-                              <button type="button" onClick={handleAddEditStop} className="w-full py-3 border-2 border-dashed border-[#a78bfa]/30 text-[#a78bfa] rounded-2xl font-bold text-sm hover:bg-[#a78bfa]/5 transition-colors">+ 新增下一站</button>
-                          </div>
-                      )}
-                  </div>
-
-                  <button 
-                      onClick={handleConfirmEdit}
-                      className="w-full py-4 bg-[#38bdf8] text-white font-black text-lg rounded-3xl hover:bg-[#0ea5e9] shadow-lg shadow-blue-500/30 transition-colors mt-auto"
-                  >
-                      儲存變更
-                  </button>
-              </div>
-          </div>
-      )}
-
-      {/* 3. Delete Confirmation Modal */}
-      {isDeleteConfirmOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-6 animate-fade-in">
-              <div className="bg-white dark:bg-[#0f172a] w-full max-w-xs rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl text-center animate-slide-up">
-                  <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/20 text-red-500 mx-auto flex items-center justify-center mb-4">
-                      <TrashIcon className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">確定要刪除嗎？</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
-                      此操作將永久刪除本次旅程計畫，資料無法復原。
-                  </p>
-                  <div className="flex gap-3">
-                      <button onClick={() => setIsDeleteConfirmOpen(false)} className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-[#1e293b] text-slate-500 dark:text-slate-400 font-bold">取消</button>
-                      <button onClick={handleDeleteTrip} className="flex-1 py-3 rounded-2xl bg-red-500 text-white font-bold shadow-lg shadow-red-500/30">確認刪除</button>
-                  </div>
-              </div>
-          </div>
-      )}
-
-      {/* 4. Archive Confirmation Modal */}
-      {isArchiveConfirmOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-6 animate-fade-in">
-              <div className="bg-white dark:bg-[#0f172a] w-full max-w-xs rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl text-center animate-slide-up">
-                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 mx-auto flex items-center justify-center mb-4">
-                      <ArchiveBoxArrowDownIcon className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">封存本次旅程</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
-                      旅程將移至「已封存」，您可以隨時在首頁的設定選單中還原。
-                  </p>
-                  <div className="flex gap-3">
-                      <button onClick={() => setIsArchiveConfirmOpen(false)} className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-[#1e293b] text-slate-500 dark:text-slate-400 font-bold">取消</button>
-                      <button onClick={handleArchiveTrip} className="flex-1 py-3 rounded-2xl bg-slate-800 dark:bg-white text-white dark:text-slate-900 font-bold shadow-lg">確認封存</button>
-                  </div>
-              </div>
-          </div>
-      )}
+        {isExportModalOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] p-6 shadow-2xl border border-slate-200 dark:border-white/10 animate-slide-up flex flex-col max-h-[80vh]">
+                     <div className="flex justify-between items-center mb-6">
+                         <h3 className="text-xl font-bold text-slate-800 dark:text-white">匯出行程</h3>
+                         <button onClick={() => setIsExportModalOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                             <XMarkIcon className="w-5 h-5" />
+                         </button>
+                     </div>
+                     <div className="bg-slate-100 dark:bg-[#1e293b] p-4 rounded-2xl flex-grow overflow-y-auto no-scrollbar mb-4 border border-slate-200 dark:border-white/5">
+                         <pre className="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap font-mono leading-relaxed">{exportContent}</pre>
+                     </div>
+                     <div className="flex gap-3">
+                         <button onClick={handleCopyToClipboard} className={`flex-1 py-3 rounded-2xl font-bold transition-all ${copySuccess ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-[#1e293b] text-slate-600 dark:text-slate-300'}`}>
+                             {copySuccess ? '已複製！' : '複製文字'}
+                         </button>
+                         <button onClick={handleDownloadFile} className="flex-1 py-3 rounded-2xl font-bold bg-[#38bdf8] text-white shadow-lg shadow-blue-500/30">
+                             下載檔案
+                         </button>
+                     </div>
+                </div>
+            </div>
+        )}
 
     </div>
   );
 }
-
-const NavIcon = ({ icon, active, onClick }: { icon: any, active: boolean, onClick: () => void }) => (
-  <button 
-    onClick={onClick}
-    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors duration-200 relative ${active ? 'text-white' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}
-  >
-    {icon}
-  </button>
-);
 
 export default App;
