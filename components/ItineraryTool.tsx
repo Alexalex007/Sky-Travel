@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Trip, Activity, FlightInfo } from '../types';
-import { PlusIcon, CoffeeIcon, CameraIcon, DiningIcon, BusIcon, TagIcon, MapIcon, PlaneIcon, ArrowLongRightIcon, ClockIcon, HourglassIcon, LockClosedIcon, LockOpenIcon, TrashIcon, ChevronRightIcon, NavigationArrowIcon, ChevronUpIcon, ChevronDownIcon } from './Icons';
+import { PlusIcon, CoffeeIcon, CameraIcon, DiningIcon, BusIcon, TagIcon, MapIcon, PlaneIcon, ArrowLongRightIcon, ClockIcon, HourglassIcon, LockClosedIcon, LockOpenIcon, TrashIcon, ChevronRightIcon, NavigationArrowIcon, ChevronUpIcon, ChevronDownIcon, DocumentTextIcon } from './Icons';
 
 interface Props {
   trip: Trip;
@@ -140,7 +140,7 @@ const ActivityCard: React.FC<{ activity: Activity, onClick: () => void }> = ({ a
                 style={{ color: typeColor.hex }}
             >
                 {activity.type === 'sightseeing' && <CameraIcon className="w-5 h-5" />}
-                {activity.type === 'food' && <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.008v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>}
+                {activity.type === 'food' && <DiningIcon className="w-5 h-5" />}
                 {activity.type === 'transport' && <BusIcon className="w-5 h-5" />}
             </button>
         </div>
@@ -208,6 +208,16 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   const isFormValid = modalMode === 'PLAN' 
     ? !!newActivity.title 
     : !!(newFlight.flightNumber && newFlight.departureCode && newFlight.arrivalCode);
+
+  // Get Dynamic Title Props
+  const getActivityConfig = (type: string) => {
+      switch(type) {
+          case 'food': return { label: '餐廳名稱', placeholder: '例如：一蘭拉麵、築地市場' };
+          case 'transport': return { label: '交通方式', placeholder: '例如：搭乘 JR 山手線、新幹線' };
+          default: return { label: '景點名稱', placeholder: '例如：參觀東京鐵塔、淺草寺' };
+      }
+  };
+  const activityConfig = getActivityConfig(newActivity.type);
 
   // Calculate duration when flight times change
   useEffect(() => {
@@ -405,7 +415,8 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
             location: newActivity.location,
             completed: false,
             type: newActivity.type,
-            duration: newActivity.duration
+            duration: newActivity.duration,
+            description: newActivity.description
         };
 
         if (editingActivityId) {
@@ -847,11 +858,23 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                  <div className="space-y-4 animate-fade-in">
                     <div className="relative p-1 rounded-2xl bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 backdrop-blur-xl flex h-14 shadow-inner mb-6">
                         <div className={`absolute top-1 bottom-1 w-[calc(33.33%-4px)] rounded-xl bg-white dark:bg-[#374151] border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0`} style={{ left: newActivity.type === 'sightseeing' ? '4px' : newActivity.type === 'food' ? 'calc(33.33% + 2px)' : 'calc(66.66%)' }}></div>
-                        <button onClick={() => setNewActivity({...newActivity, type: 'sightseeing'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'sightseeing' ? 'text-purple-500 dark:text-purple-400' : 'text-slate-400'}`}><CameraIcon className="w-4 h-4" /> 觀光</button>
-                        <button onClick={() => setNewActivity({...newActivity, type: 'food'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'food' ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'}`}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.008v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg> 美食</button>
-                        <button onClick={() => setNewActivity({...newActivity, type: 'transport'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-sm font-bold transition-colors ${newActivity.type === 'transport' ? 'text-yellow-500 dark:text-yellow-400' : 'text-slate-400'}`}><BusIcon className="w-4 h-4" /> 交通</button>
+                        <button onClick={() => setNewActivity({...newActivity, type: 'sightseeing'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-xs font-bold transition-colors ${newActivity.type === 'sightseeing' ? 'text-purple-500 dark:text-purple-400' : 'text-slate-400'}`}><CameraIcon className="w-4 h-4" /> 觀光景點</button>
+                        <button onClick={() => setNewActivity({...newActivity, type: 'food'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-xs font-bold transition-colors ${newActivity.type === 'food' ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'}`}><DiningIcon className="w-4 h-4" /> 特色美食</button>
+                        <button onClick={() => setNewActivity({...newActivity, type: 'transport'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-xs font-bold transition-colors ${newActivity.type === 'transport' ? 'text-yellow-500 dark:text-yellow-400' : 'text-slate-400'}`}><BusIcon className="w-4 h-4" /> 交通移動</button>
                     </div>
-                    <div><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">行程名稱</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><TagIcon className="w-5 h-5" /></span><input type="text" placeholder="例如：參觀東京鐵塔" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.title} onChange={e => setNewActivity({...newActivity, title: e.target.value})} /></div></div>
+                    <div>
+                        <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">{activityConfig.label}</label>
+                        <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3">
+                            <span className="text-slate-400"><TagIcon className="w-5 h-5" /></span>
+                            <input 
+                                type="text" 
+                                placeholder={activityConfig.placeholder} 
+                                className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" 
+                                value={newActivity.title} 
+                                onChange={e => setNewActivity({...newActivity, title: e.target.value})} 
+                            />
+                        </div>
+                    </div>
                     
                     <div className="flex gap-4">
                         <div className="flex-1">
@@ -873,6 +896,19 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                     </div>
 
                     <div><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">地點 (輸入可跳轉地圖)</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><MapIcon className="w-5 h-5" /></span><input type="text" placeholder="輸入具體地址或地標" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} /></div></div>
+                    
+                    <div>
+                        <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">備註 (選填)</label>
+                        <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-start gap-3">
+                            <span className="text-slate-400 mt-0.5"><DocumentTextIcon className="w-5 h-5" /></span>
+                            <textarea 
+                                placeholder="例如：預約號碼、注意事項..." 
+                                className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium resize-none h-20" 
+                                value={newActivity.description} 
+                                onChange={e => setNewActivity({...newActivity, description: e.target.value})} 
+                            />
+                        </div>
+                    </div>
                  </div>
              ) : (
                  <div className="space-y-6 animate-fade-in">
