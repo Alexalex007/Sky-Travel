@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Trip, Activity, FlightInfo } from '../types';
-import { PlusIcon, CoffeeIcon, CameraIcon, DiningIcon, BusIcon, TagIcon, MapIcon, PlaneIcon, ArrowLongRightIcon, ClockIcon, HourglassIcon, LockClosedIcon, LockOpenIcon, TrashIcon, ChevronRightIcon, NavigationArrowIcon, ChevronUpIcon, ChevronDownIcon, DocumentTextIcon } from './Icons';
+import { PlusIcon, CoffeeIcon, CameraIcon, DiningIcon, BusIcon, TagIcon, MapIcon, PlaneIcon, ArrowLongRightIcon, ClockIcon, HourglassIcon, LockClosedIcon, LockOpenIcon, TrashIcon, ChevronRightIcon, NavigationArrowIcon, ChevronUpIcon, ChevronDownIcon, DocumentTextIcon, CloudIcon, XMarkIcon, CalendarIcon, CheckIcon } from './Icons';
 
 interface Props {
   trip: Trip;
@@ -209,15 +209,17 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
     ? !!newActivity.title 
     : !!(newFlight.flightNumber && newFlight.departureCode && newFlight.arrivalCode);
 
-  // Get Dynamic Title Props
+  // Get Dynamic Title Props and Icon
   const getActivityConfig = (type: string) => {
       switch(type) {
-          case 'food': return { label: '餐廳名稱', placeholder: '例如：一蘭拉麵、築地市場' };
-          case 'transport': return { label: '交通方式', placeholder: '例如：搭乘 JR 山手線、新幹線' };
-          default: return { label: '景點名稱', placeholder: '例如：參觀東京鐵塔、淺草寺' };
+          case 'food': return { label: '餐廳名稱', placeholder: '例如：一蘭拉麵、築地市場', icon: DiningIcon };
+          case 'transport': return { label: '交通方式', placeholder: '例如：搭乘 JR 山手線、新幹線', icon: BusIcon };
+          case 'flight': return { label: '項目名稱', placeholder: '例如：其他行程', icon: PlaneIcon };
+          default: return { label: '景點名稱', placeholder: '例如：參觀東京鐵塔、淺草寺', icon: CameraIcon };
       }
   };
   const activityConfig = getActivityConfig(newActivity.type);
+  const ActivityTitleIcon = activityConfig.icon;
 
   // Calculate duration when flight times change
   useEffect(() => {
@@ -399,7 +401,6 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   };
 
   const handleSaveActivity = () => {
-    // ... same logic ...
     const updatedActivities = { ...trip.activities };
     if (!updatedActivities[selectedDate]) {
       updatedActivities[selectedDate] = [];
@@ -486,7 +487,6 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
     }
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
-    // Set a transparent image to avoid default ghost if needed, or leave default
   };
 
   const onDragOver = (e: React.DragEvent) => {
@@ -606,7 +606,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
           </div>
       </div>
 
-      {/* 2. Date Selector - Adjusted padding to move up, REMOVED SCALE EFFECT to fix resizing issue */}
+      {/* 2. Date Selector */}
       <div className="pt-3 pb-2 pl-6 flex-shrink-0">
           <div className="flex gap-4 overflow-x-auto no-scrollbar py-2 snap-x pr-6">
             {dates.map(date => {
@@ -629,7 +629,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
           </div>
       </div>
 
-      {/* 2.5 Secondary Toolbar - Reduced Size, Fixed Layout */}
+      {/* 3. Toolbar (Sort Lock & Route) */}
       <div className="px-6 flex justify-between items-center gap-2 mb-2 pb-1 flex-shrink-0">
          <button 
              onClick={handleOpenRouteNav}
@@ -640,8 +640,6 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
              </div>
              路線導航
          </button>
-
-         {/* Flight button removed, integrated into Modal Toggle */}
 
          <button 
             onClick={() => canSort && setIsLocked(!isLocked)}
@@ -659,7 +657,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
          </button>
       </div>
 
-      {/* 3. Content Area */}
+      {/* 4. Timeline List */}
       <div className="flex-grow overflow-y-auto px-6 pt-2 space-y-0 no-scrollbar relative pb-32">
         {currentActivities.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-slate-400 dark:text-slate-700 space-y-4 mt-8 opacity-60">
@@ -671,11 +669,9 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
             {currentActivities.map((activity, idx) => {
               const isFirst = idx === 0;
               const isLast = idx === currentActivities.length - 1;
-              const nextActivity = !isLast ? currentActivities[idx + 1] : undefined;
               const prevActivity = !isFirst ? currentActivities[idx - 1] : undefined;
               
               const typeColor = getTypeColor(activity.type);
-              const nextColor = nextActivity ? getTypeColor(nextActivity.type) : typeColor;
               const prevColor = prevActivity ? getTypeColor(prevActivity.type) : typeColor;
 
               return (
@@ -689,13 +685,9 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                 >
                     {/* Timeline Column */}
                     <div className="flex flex-col items-center w-6 flex-shrink-0 relative">
-                        {/* Upper Line: Connects from top (Gap) to Center Dot. 
-                            Gradient from Prev Color to Current Color. 
-                            Height extends from -32px (covering mb-8 gap) to 50%.
-                        */}
                         {!isFirst && (
                             <div 
-                                className="absolute top-0 h-1/2 left-1/2 -translate-x-1/2 w-0.5 z-0 opacity-80"
+                                className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 z-0 opacity-80"
                                 style={{ 
                                     background: `linear-gradient(to bottom, ${prevColor.hex}, ${typeColor.hex})`,
                                     top: '-32px',
@@ -704,22 +696,16 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                             />
                         )}
 
-                        {/* Dot - Centered vertically in the wrapper */}
                         <div 
                             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full z-20 shadow-[0_0_10px_rgba(0,0,0,0.5)] box-content dark:bg-[#05080F] bg-white border-[3px]"
                             style={{ borderColor: typeColor.hex }}
                         ></div>
 
-                        {/* Lower Line: Connects from Center Dot to Bottom (Gap Start). 
-                            Gradient from Current Color to Next Color.
-                            Height extends from 50% to Bottom.
-                            The GAP itself is covered by the NEXT item's Upper Line.
-                        */}
                         {!isLast && (
                             <div 
                                 className="absolute top-1/2 left-1/2 -translate-x-1/2 w-0.5 z-0 opacity-80"
                                 style={{ 
-                                    background: `linear-gradient(to bottom, ${typeColor.hex}, ${nextColor.hex})`,
+                                    background: typeColor.hex, // Solid color leaving current item
                                     height: '50%'
                                 }}
                             />
@@ -740,7 +726,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
         )}
       </div>
 
-      {/* FAB - Fixed Position significantly lower */}
+      {/* 5. Floating Add Button */}
       <button 
         onClick={() => { 
             setEditingActivityId(null); 
@@ -769,213 +755,243 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
         <PlusIcon className="w-8 h-8 stroke-[2.5]" />
       </button>
 
-      {/* Modals ... */}
-      {showRouteModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[85vh]">
-             {/* Route Modal Content */}
-             <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">本日路線規劃</h3>
-                 <button onClick={() => setShowRouteModal(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
-                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                 </button>
-             </div>
-             <div className="flex-grow overflow-y-auto no-scrollbar space-y-3 pb-4">
-                {routeLocations.length === 0 ? (
-                    <div className="text-center py-10 text-slate-500 text-sm font-bold">
-                        <p>找不到可導航的地點。</p>
-                        <p className="mt-2 text-xs">請確保行程中包含「觀光」或「美食」類型，並已填寫地點資訊。</p>
-                    </div>
-                ) : (
-                    routeLocations.map((loc, idx) => (
-                        <div 
-                            key={loc.id} 
-                            className="bg-slate-50 dark:bg-[#1f2937] p-4 rounded-2xl flex items-center gap-3 border border-slate-200 dark:border-white/5 active:scale-[0.98] transition-all cursor-move"
-                            draggable
-                            onDragStart={(e) => onRouteDragStart(e, idx)}
-                            onDragOver={onRouteDragOver}
-                            onDrop={(e) => onRouteDrop(e, idx)}
-                        >
-                            <div className="w-6 h-6 rounded-full bg-[#38bdf8] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 cursor-grab active:cursor-grabbing">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
-                            </div>
-                            <div className="flex-grow overflow-hidden">
-                                <p className="text-slate-800 dark:text-white font-bold truncate">{loc.location || loc.title}</p>
-                                <p className="text-slate-500 dark:text-slate-400 text-xs truncate">{loc.title}</p>
-                            </div>
-                            <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-white/10 text-slate-500 flex items-center justify-center text-xs font-bold">
-                                {idx + 1}
-                            </div>
-                        </div>
-                    ))
-                )}
-             </div>
-             <button onClick={handleConfirmRoute} disabled={routeLocations.length < 1} className={`w-full py-4 rounded-2xl font-bold border transition-all duration-300 shadow-lg mt-auto flex items-center justify-center gap-2 ${routeLocations.length >= 1 ? 'bg-[#38bdf8] text-white border-transparent shadow-blue-500/30' : 'bg-slate-100 dark:bg-[#1f2937] text-slate-500 border-slate-200 dark:border-white/5 cursor-not-allowed'}`}><NavigationArrowIcon className="w-5 h-5" />開啟 Google Maps 多點導航</button>
-          </div>
-        </div>
-      )}
-
+      {/* --- MODALS --- */}
+      
+      {/* 1. Add/Edit Activity Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
-             
-             {/* Header with Close */}
-             <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">{editingActivityId ? '編輯項目' : '新增項目'}</h3>
-                 <button onClick={closeModal} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
-             </div>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+              <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] border border-slate-200 dark:border-white/10 p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+                  
+                  {/* Modal Header */}
+                  <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">
+                          {editingActivityId ? '編輯項目' : '新增項目'}
+                      </h3>
+                      <button onClick={closeModal} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                          <XMarkIcon className="w-5 h-5" />
+                      </button>
+                  </div>
 
-             {/* Mode Toggle Switch - Glassmorphism Style */}
-             <div className="bg-slate-100/80 dark:bg-white/5 p-1.5 rounded-[20px] flex relative h-14 items-center backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-inner mb-6 shrink-0">
-                <div 
-                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[16px] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg backdrop-blur-md
-                    ${modalMode === 'PLAN' 
-                        ? 'left-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-purple-500/30' 
-                        : 'left-[50%] bg-gradient-to-r from-sky-400 to-blue-500 shadow-blue-500/30'}
-                    `}
-                ></div>
-                
-                <button 
-                    type="button"
-                    onClick={() => setModalMode('PLAN')} 
-                    className={`flex-1 relative z-10 font-bold text-sm transition-colors duration-300 flex items-center justify-center gap-2 ${modalMode === 'PLAN' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
-                >
-                    <MapIcon className="w-4 h-4" /> 
-                    一般行程
-                </button>
-                <button 
-                    type="button"
-                    onClick={() => setModalMode('FLIGHT')} 
-                    className={`flex-1 relative z-10 font-bold text-sm transition-colors duration-300 flex items-center justify-center gap-2 ${modalMode === 'FLIGHT' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
-                >
-                    <PlaneIcon className="w-4 h-4" /> 
-                    航班資訊
-                </button>
-             </div>
-             
-             <div className="flex-grow overflow-y-auto no-scrollbar space-y-4 pb-4">
-             {modalMode === 'PLAN' ? (
-                 <div className="space-y-4 animate-fade-in">
-                    <div className="relative p-1 rounded-2xl bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 backdrop-blur-xl flex h-14 shadow-inner mb-6">
-                        <div className={`absolute top-1 bottom-1 w-[calc(33.33%-4px)] rounded-xl bg-white dark:bg-[#374151] border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0`} style={{ left: newActivity.type === 'sightseeing' ? '4px' : newActivity.type === 'food' ? 'calc(33.33% + 2px)' : 'calc(66.66%)' }}></div>
-                        <button onClick={() => setNewActivity({...newActivity, type: 'sightseeing'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-xs font-bold transition-colors ${newActivity.type === 'sightseeing' ? 'text-purple-500 dark:text-purple-400' : 'text-slate-400'}`}><CameraIcon className="w-4 h-4" /> 觀光景點</button>
-                        <button onClick={() => setNewActivity({...newActivity, type: 'food'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-xs font-bold transition-colors ${newActivity.type === 'food' ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'}`}><DiningIcon className="w-4 h-4" /> 特色美食</button>
-                        <button onClick={() => setNewActivity({...newActivity, type: 'transport'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-xs font-bold transition-colors ${newActivity.type === 'transport' ? 'text-yellow-500 dark:text-yellow-400' : 'text-slate-400'}`}><BusIcon className="w-4 h-4" /> 交通移動</button>
-                    </div>
-                    <div>
-                        <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">{activityConfig.label}</label>
-                        <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3">
-                            <span className="text-slate-400"><TagIcon className="w-5 h-5" /></span>
-                            <input 
-                                type="text" 
-                                placeholder={activityConfig.placeholder} 
-                                className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" 
-                                value={newActivity.title} 
-                                onChange={e => setNewActivity({...newActivity, title: e.target.value})} 
-                            />
-                        </div>
-                    </div>
+                  {/* Mode Tabs - Sliding Gradient Glass */}
+                  <div className="bg-slate-100/80 dark:bg-white/5 p-1.5 rounded-[20px] flex relative h-14 items-center backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-inner mb-6 shrink-0">
+                    <div 
+                        className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[16px] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg backdrop-blur-md
+                        ${modalMode === 'PLAN' 
+                            ? 'left-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-purple-500/30' 
+                            : 'left-[50%] bg-gradient-to-r from-sky-400 to-blue-500 shadow-blue-500/30'}
+                        `}
+                    ></div>
                     
-                    <div className="flex gap-4">
-                        <div className="flex-1">
-                            <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">開始時間</label>
-                            <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl px-4 flex items-center gap-3 h-[58px]">
-                                <span className="text-slate-400"><ClockIcon className="w-5 h-5" /></span>
-                                <input type="time" className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold appearance-none" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} />
-                            </div>
-                        </div>
-                        <div className="flex-1">
-                            <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">預計停留</label>
-                            <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl px-4 flex items-center gap-3 h-[58px]">
-                                <span className="text-slate-400"><HourglassIcon className="w-5 h-5" /></span>
-                                <select className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold text-sm" value={newActivity.duration} onChange={e => setNewActivity({...newActivity, duration: e.target.value})}>
-                                    {Array.from({ length: 36 }, (_, i) => (i + 1) * 0.5).map(val => (<option key={val} value={`${val}h`} className="bg-white dark:bg-[#1f2937]">{val}h</option>))}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+                    <button 
+                        type="button"
+                        onClick={() => setModalMode('PLAN')} 
+                        className={`flex-1 relative z-10 font-bold text-sm transition-colors duration-300 flex items-center justify-center gap-2 ${modalMode === 'PLAN' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                    >
+                        <MapIcon className="w-4 h-4" /> 
+                        一般行程
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={() => setModalMode('FLIGHT')} 
+                        className={`flex-1 relative z-10 font-bold text-sm transition-colors duration-300 flex items-center justify-center gap-2 ${modalMode === 'FLIGHT' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                    >
+                        <PlaneIcon className="w-4 h-4" /> 
+                        航班資訊
+                    </button>
+                 </div>
 
-                    <div><label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">地點 (輸入可跳轉地圖)</label><div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3"><span className="text-slate-400"><MapIcon className="w-5 h-5" /></span><input type="text" placeholder="輸入具體地址或地標" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} /></div></div>
-                    
-                    <div>
-                        <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">備註 (選填)</label>
-                        <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-start gap-3">
-                            <span className="text-slate-400 mt-0.5"><DocumentTextIcon className="w-5 h-5" /></span>
-                            <textarea 
-                                placeholder="例如：預約號碼、注意事項..." 
-                                className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium resize-none h-20" 
-                                value={newActivity.description} 
-                                onChange={e => setNewActivity({...newActivity, description: e.target.value})} 
-                            />
-                        </div>
-                    </div>
-                 </div>
-             ) : (
-                 <div className="space-y-6 animate-fade-in">
-                     <div className="grid grid-cols-2 gap-4">
-                         <div>
-                             <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">航班編號</label>
-                             <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-3.5">
-                                 <input type="text" placeholder="CX500" className="w-full bg-transparent text-slate-800 dark:text-white font-bold text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.flightNumber} onChange={e => setNewFlight({...newFlight, flightNumber: e.target.value.toUpperCase()})} />
-                             </div>
-                         </div>
-                         <div>
-                             <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">機型 (選填)</label>
-                             <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-3.5">
-                                 <input type="text" placeholder="A350" className="w-full bg-transparent text-slate-800 dark:text-white font-bold text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.planeType} onChange={e => setNewFlight({...newFlight, planeType: e.target.value.toUpperCase()})} />
-                             </div>
-                         </div>
-                     </div>
-                     <div className="grid grid-cols-2 gap-4">
-                         <div>
-                             <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">出發地代碼</label>
-                             <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
-                                 <input type="text" placeholder="HKG" className="w-full bg-transparent text-slate-800 dark:text-white font-black text-2xl text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.departureCode} onChange={e => setNewFlight({...newFlight, departureCode: e.target.value.toUpperCase()})} />
-                             </div>
-                         </div>
-                         <div>
-                             <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">目的地代碼</label>
-                             <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
-                                 <input type="text" placeholder="NRT" className="w-full bg-transparent text-slate-800 dark:text-white font-black text-2xl text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.arrivalCode} onChange={e => setNewFlight({...newFlight, arrivalCode: e.target.value.toUpperCase()})} />
-                             </div>
-                         </div>
-                     </div>
-                     {/* Departure */}
-                     <div className="bg-slate-50 dark:bg-[#1e293b]/50 rounded-[24px] p-4 border border-slate-200 dark:border-white/5">
-                         <div className="flex items-center gap-2 mb-4 text-[#38bdf8]"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" /></svg><span className="font-bold text-sm">出發資訊</span></div>
-                         <div className="grid grid-cols-2 gap-4 mb-4">
-                             <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="date" value={newFlight.departureDate} onChange={e => setNewFlight({...newFlight, departureDate: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
-                             <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="time" value={newFlight.departureTime} onChange={e => setNewFlight({...newFlight, departureTime: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
-                         </div>
-                         <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5 flex justify-between items-center relative">
-                             <select className="absolute inset-0 bg-transparent text-transparent w-full opacity-0 z-10" value={depTz} onChange={e => setDepTz(Number(e.target.value))}>{timezones.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}</select>
-                             <span className="text-slate-800 dark:text-white text-sm font-bold truncate">{timezones.find(t => t.value === depTz)?.label}</span>
-                             <ChevronRightIcon className="w-4 h-4 text-slate-500" />
-                         </div>
-                     </div>
-                     {/* Arrival */}
-                     <div className="bg-slate-50 dark:bg-[#1e293b]/50 rounded-[24px] p-4 border border-slate-200 dark:border-white/5">
-                         <div className="flex items-center gap-2 mb-4 text-[#34d399]"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg><span className="font-bold text-sm">抵達資訊</span></div>
-                         <div className="grid grid-cols-2 gap-4 mb-4">
-                             <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="date" value={newFlight.arrivalDate} onChange={e => setNewFlight({...newFlight, arrivalDate: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
-                             <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="time" value={newFlight.arrivalTime} onChange={e => setNewFlight({...newFlight, arrivalTime: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
-                         </div>
-                         <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5 flex justify-between items-center relative">
-                             <select className="absolute inset-0 bg-transparent text-transparent w-full opacity-0 z-10" value={arrTz} onChange={e => setArrTz(Number(e.target.value))}>{timezones.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}</select>
-                             <span className="text-slate-800 dark:text-white text-sm font-bold truncate">{timezones.find(t => t.value === arrTz)?.label}</span>
-                             <ChevronRightIcon className="w-4 h-4 text-slate-500" />
-                         </div>
-                     </div>
-                 </div>
-             )}
-             </div>
-             <div className="pt-2 flex gap-3 pb-safe">
-                 {editingActivityId && <button onClick={handleDeleteActivity} className="w-14 flex items-center justify-center rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20"><TrashIcon className="w-5 h-5" /></button>}
-                 <button onClick={handleSaveActivity} disabled={!isFormValid} className={`flex-1 py-4 rounded-2xl font-bold border transition-all duration-300 shadow-lg ${isFormValid ? 'bg-[#38bdf8] text-white border-transparent shadow-blue-500/30' : 'bg-slate-100 dark:bg-[#1f2937] text-slate-500 border-slate-200 dark:border-white/5 cursor-not-allowed'}`}>{isFormValid ? '儲存變更' : '請填寫完整資訊'}</button>
-             </div>
+                  {/* Scrollable Content */}
+                  <div className="flex-grow overflow-y-auto no-scrollbar space-y-4 pb-4">
+                      
+                      {modalMode === 'PLAN' ? (
+                          <div className="space-y-4 animate-fade-in">
+                              {/* Type Selection */}
+                              <div className="relative p-1 rounded-2xl bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 backdrop-blur-xl flex h-14 shadow-inner mb-6">
+                                  <div className={`absolute top-1 bottom-1 w-[calc(33.33%-4px)] rounded-xl bg-white dark:bg-[#374151] border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0`} style={{ left: newActivity.type === 'sightseeing' ? '4px' : newActivity.type === 'food' ? 'calc(33.33% + 2px)' : 'calc(66.66%)' }}></div>
+                                  <button onClick={() => setNewActivity({...newActivity, type: 'sightseeing'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-xs font-bold transition-colors ${newActivity.type === 'sightseeing' ? 'text-purple-500 dark:text-purple-400' : 'text-slate-400'}`}><CameraIcon className="w-4 h-4" /> 觀光景點</button>
+                                  <button onClick={() => setNewActivity({...newActivity, type: 'food'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-xs font-bold transition-colors ${newActivity.type === 'food' ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'}`}><DiningIcon className="w-4 h-4" /> 特色美食</button>
+                                  <button onClick={() => setNewActivity({...newActivity, type: 'transport'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-xs font-bold transition-colors ${newActivity.type === 'transport' ? 'text-yellow-500 dark:text-yellow-400' : 'text-slate-400'}`}><BusIcon className="w-4 h-4" /> 交通移動</button>
+                              </div>
+
+                              {/* Title */}
+                              <div>
+                                  <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">{activityConfig.label}</label>
+                                  <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3">
+                                      <span className="text-slate-400"><ActivityTitleIcon className="w-5 h-5" /></span>
+                                      <input 
+                                          type="text" 
+                                          placeholder={activityConfig.placeholder} 
+                                          className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" 
+                                          value={newActivity.title} 
+                                          onChange={e => setNewActivity({...newActivity, title: e.target.value})} 
+                                      />
+                                  </div>
+                              </div>
+                              
+                              {/* Time & Duration */}
+                              <div className="flex gap-4">
+                                  <div className="flex-1">
+                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">開始時間</label>
+                                      <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl px-4 flex items-center gap-3 h-[58px]">
+                                          <span className="text-slate-400"><ClockIcon className="w-5 h-5" /></span>
+                                          <input type="time" className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold appearance-none" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} />
+                                      </div>
+                                  </div>
+                                  <div className="flex-1">
+                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">預計停留</label>
+                                      <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl px-4 flex items-center gap-3 h-[58px]">
+                                          <span className="text-slate-400"><HourglassIcon className="w-5 h-5" /></span>
+                                          <select className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold text-sm" value={newActivity.duration} onChange={e => setNewActivity({...newActivity, duration: e.target.value})}>
+                                              {Array.from({ length: 36 }, (_, i) => (i + 1) * 0.5).map(val => (<option key={val} value={`${val}h`} className="bg-white dark:bg-[#1f2937]">{val}h</option>))}
+                                          </select>
+                                      </div>
+                                  </div>
+                              </div>
+                              
+                              {/* Location */}
+                              <div>
+                                  <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">地點 (輸入可跳轉地圖)</label>
+                                  <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3">
+                                      <span className="text-slate-400"><MapIcon className="w-5 h-5" /></span>
+                                      <input type="text" placeholder="輸入具體地址或地標" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} />
+                                  </div>
+                              </div>
+                              
+                              {/* Notes */}
+                              <div>
+                                  <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">備註 (選填)</label>
+                                  <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-start gap-3">
+                                      <span className="text-slate-400 mt-0.5"><DocumentTextIcon className="w-5 h-5" /></span>
+                                      <textarea 
+                                          placeholder="例如：預約號碼、注意事項..." 
+                                          className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium resize-none h-20" 
+                                          value={newActivity.description} 
+                                          onChange={e => setNewActivity({...newActivity, description: e.target.value})} 
+                                      />
+                                  </div>
+                              </div>
+                          </div>
+                      ) : (
+                          <div className="space-y-6 animate-fade-in">
+                              <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">航班編號</label>
+                                      <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-3.5">
+                                          <input type="text" placeholder="CX500" className="w-full bg-transparent text-slate-800 dark:text-white font-bold text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.flightNumber} onChange={e => setNewFlight({...newFlight, flightNumber: e.target.value.toUpperCase()})} />
+                                      </div>
+                                  </div>
+                                  <div>
+                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">機型 (選填)</label>
+                                      <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-3.5">
+                                          <input type="text" placeholder="A350" className="w-full bg-transparent text-slate-800 dark:text-white font-bold text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.planeType} onChange={e => setNewFlight({...newFlight, planeType: e.target.value.toUpperCase()})} />
+                                      </div>
+                                  </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">出發地代碼</label>
+                                      <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
+                                          <input type="text" placeholder="HKG" className="w-full bg-transparent text-slate-800 dark:text-white font-black text-2xl text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.departureCode} onChange={e => setNewFlight({...newFlight, departureCode: e.target.value.toUpperCase()})} />
+                                      </div>
+                                  </div>
+                                  <div>
+                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block">目的地代碼</label>
+                                      <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4">
+                                          <input type="text" placeholder="NRT" className="w-full bg-transparent text-slate-800 dark:text-white font-black text-2xl text-center uppercase focus:outline-none placeholder-slate-400 dark:placeholder-slate-600" value={newFlight.arrivalCode} onChange={e => setNewFlight({...newFlight, arrivalCode: e.target.value.toUpperCase()})} />
+                                      </div>
+                                  </div>
+                              </div>
+                              {/* Departure */}
+                              <div className="bg-slate-50 dark:bg-[#1e293b]/50 rounded-[24px] p-4 border border-slate-200 dark:border-white/5">
+                                  <div className="flex items-center gap-2 mb-4 text-[#38bdf8]">
+                                      {/* Rocket Icon replacement (using rotated PlaneIcon) */}
+                                      <PlaneIcon className="w-5 h-5 transform -rotate-45" />
+                                      <span className="font-bold text-sm">出發資訊</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4 mb-4">
+                                      <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="date" value={newFlight.departureDate} onChange={e => setNewFlight({...newFlight, departureDate: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
+                                      <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="time" value={newFlight.departureTime} onChange={e => setNewFlight({...newFlight, departureTime: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
+                                  </div>
+                                  <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5 flex justify-between items-center relative">
+                                      <select className="absolute inset-0 bg-transparent text-transparent w-full opacity-0 z-10" value={depTz} onChange={e => setDepTz(Number(e.target.value))}>{timezones.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}</select>
+                                      <span className="text-slate-800 dark:text-white text-sm font-bold truncate">{timezones.find(t => t.value === depTz)?.label}</span>
+                                      <ChevronRightIcon className="w-4 h-4 text-slate-500" />
+                                  </div>
+                              </div>
+                              {/* Arrival */}
+                              <div className="bg-slate-50 dark:bg-[#1e293b]/50 rounded-[24px] p-4 border border-slate-200 dark:border-white/5">
+                                  <div className="flex items-center gap-2 mb-4 text-[#34d399]">
+                                      <MapIcon className="w-5 h-5" />
+                                      <span className="font-bold text-sm">抵達資訊</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4 mb-4">
+                                      <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="date" value={newFlight.arrivalDate} onChange={e => setNewFlight({...newFlight, arrivalDate: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
+                                      <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5"><input type="time" value={newFlight.arrivalTime} onChange={e => setNewFlight({...newFlight, arrivalTime: e.target.value})} className="bg-transparent text-slate-800 dark:text-white text-sm font-bold w-full focus:outline-none" /></div>
+                                  </div>
+                                  <div className="bg-white dark:bg-[#0f172a] rounded-xl p-3 border border-slate-200 dark:border-white/5 flex justify-between items-center relative">
+                                      <select className="absolute inset-0 bg-transparent text-transparent w-full opacity-0 z-10" value={arrTz} onChange={e => setArrTz(Number(e.target.value))}>{timezones.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}</select>
+                                      <span className="text-slate-800 dark:text-white text-sm font-bold truncate">{timezones.find(t => t.value === arrTz)?.label}</span>
+                                      <ChevronRightIcon className="w-4 h-4 text-slate-500" />
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="pt-2 flex gap-3 pb-safe mt-auto">
+                      {editingActivityId && <button onClick={handleDeleteActivity} className="w-14 flex items-center justify-center rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20"><TrashIcon className="w-5 h-5" /></button>}
+                      <button onClick={handleSaveActivity} disabled={!isFormValid} className={`flex-1 py-4 rounded-2xl font-bold border transition-all duration-300 shadow-lg ${isFormValid ? 'bg-[#38bdf8] text-white border-transparent shadow-blue-500/30' : 'bg-slate-100 dark:bg-[#1f2937] text-slate-500 border-slate-200 dark:border-white/5 cursor-not-allowed'}`}>{isFormValid ? (editingActivityId ? '儲存變更' : '確認新增') : '請填寫完整資訊'}</button>
+                  </div>
+              </div>
           </div>
-        </div>
       )}
+
+      {/* 2. Route Navigation Modal */}
+      {showRouteModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+              <div className="bg-white dark:bg-[#0f172a] w-full max-w-sm rounded-[32px] p-6 shadow-2xl border border-slate-200 dark:border-white/10 animate-scale-in">
+                  <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                          <NavigationArrowIcon className="w-6 h-6 text-[#38bdf8]" />
+                          路線規劃
+                      </h3>
+                      <button onClick={() => setShowRouteModal(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                          <XMarkIcon className="w-5 h-5" />
+                      </button>
+                  </div>
+
+                  <p className="text-sm text-slate-500 mb-4 font-bold">拖曳調整順序，生成最佳路線：</p>
+
+                  <div className="space-y-2 mb-6 max-h-[50vh] overflow-y-auto no-scrollbar">
+                      {routeLocations.map((loc, idx) => (
+                          <div 
+                              key={loc.id}
+                              draggable
+                              onDragStart={(e) => onRouteDragStart(e, idx)}
+                              onDragOver={onRouteDragOver}
+                              onDrop={(e) => onRouteDrop(e, idx)}
+                              className={`bg-slate-50 dark:bg-white/5 p-3 rounded-xl flex items-center gap-3 border border-slate-200 dark:border-white/5 cursor-move active:scale-95 transition-transform ${draggedRouteIndex === idx ? 'opacity-50' : ''}`}
+                          >
+                              <div className="w-6 h-6 rounded-full bg-[#38bdf8] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                  {idx + 1}
+                              </div>
+                              <span className="font-bold text-slate-700 dark:text-white text-sm truncate">{loc.location || loc.title}</span>
+                          </div>
+                      ))}
+                  </div>
+
+                  <button 
+                      onClick={handleConfirmRoute}
+                      className="w-full py-4 bg-[#38bdf8] text-white rounded-2xl font-black text-lg shadow-lg hover:bg-[#0ea5e9] transition-all flex items-center justify-center gap-2"
+                  >
+                      <MapIcon className="w-5 h-5" />
+                      開啟 Google Maps 導航
+                  </button>
+              </div>
+          </div>
+      )}
+
     </div>
   );
 };
