@@ -466,6 +466,57 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       closeModal();
   };
 
+  const handleAddToCalendar = () => {
+      let title = '';
+      let details = '';
+      let location = '';
+      let startDateTime = '';
+      let endDateTime = '';
+
+      const formatDateForGCal = (dateStr: string, timeStr: string) => {
+           // Create Date object assuming local time input
+           const d = new Date(`${dateStr}T${timeStr}`);
+           // Convert to ISO string (UTC) and strip delimiters for Google Calendar "Z" format
+           return d.toISOString().replace(/-|:|\.\d+/g, "");
+      };
+
+      const addHours = (dateStr: string, timeStr: string, hours: number) => {
+           const d = new Date(`${dateStr}T${timeStr}`);
+           d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
+           return d.toISOString().replace(/-|:|\.\d+/g, "");
+      };
+
+      if (modalMode === 'PLAN') {
+          if(!newActivity.title) {
+              alert('請先輸入行程標題');
+              return;
+          }
+          title = newActivity.title;
+          details = newActivity.description || '';
+          location = newActivity.location || '';
+          
+          const duration = parseFloat((newActivity.duration || '1').replace('h', ''));
+          
+          startDateTime = formatDateForGCal(selectedDate, newActivity.time);
+          endDateTime = addHours(selectedDate, newActivity.time, duration);
+      } else {
+          // Flight
+           if(!newFlight.flightNumber || !newFlight.departureCode) {
+              alert('請先輸入航班資訊');
+              return;
+          }
+          title = `✈️ ${newFlight.departureCode} ➝ ${newFlight.arrivalCode} (${newFlight.flightNumber})`;
+          details = `航班: ${newFlight.flightNumber}\n機型: ${newFlight.planeType}\n出發: ${newFlight.departureTime} @ ${newFlight.departureCode}\n抵達: ${newFlight.arrivalTime} @ ${newFlight.arrivalCode}`;
+          location = `${newFlight.departureCode} Airport`;
+          
+          startDateTime = formatDateForGCal(newFlight.departureDate, newFlight.departureTime);
+          endDateTime = formatDateForGCal(newFlight.arrivalDate, newFlight.arrivalTime);
+      }
+
+      const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+      window.open(url, '_blank');
+  };
+
   const handleWeatherSearch = () => {
     // Use the dynamic city based on current logic (transition day sensitive)
     const targetCity = getWeatherCity();
@@ -941,6 +992,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                   {/* Footer Actions */}
                   <div className="pt-2 flex gap-3 pb-safe mt-auto">
                       {editingActivityId && <button onClick={handleDeleteActivity} className="w-14 flex items-center justify-center rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20"><TrashIcon className="w-5 h-5" /></button>}
+                      <button onClick={handleAddToCalendar} className="w-14 flex items-center justify-center rounded-2xl bg-orange-100 text-orange-500 border border-orange-200 dark:bg-orange-500/10 dark:border-orange-500/20"><CalendarIcon className="w-5 h-5" /></button>
                       <button onClick={handleSaveActivity} disabled={!isFormValid} className={`flex-1 py-4 rounded-2xl font-bold border transition-all duration-300 shadow-lg ${isFormValid ? 'bg-[#38bdf8] text-white border-transparent shadow-blue-500/30' : 'bg-slate-100 dark:bg-[#1f2937] text-slate-500 border-slate-200 dark:border-white/5 cursor-not-allowed'}`}>{isFormValid ? (editingActivityId ? '儲存變更' : '確認新增') : '請填寫完整資訊'}</button>
                   </div>
               </div>
