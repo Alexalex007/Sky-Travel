@@ -117,14 +117,15 @@ const ActivityCard: React.FC<{ activity: Activity, onClick: () => void }> = ({ a
                 borderColor: `rgba(${rgb}, 0.2)`
             }}
         >
-            <div className="flex flex-col items-center justify-center min-w-[60px] pr-4 border-r border-slate-200 dark:border-white/10">
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold mb-0.5 uppercase tracking-wider">
+            {/* Reduced width from min-w-[60px] to min-w-[48px], reduced pr-4 to pr-2, font 3xl to 2xl */}
+            <div className="flex flex-col items-center justify-center min-w-[48px] pr-2 border-r border-slate-200 dark:border-white/10">
+                <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold mb-0.5 uppercase tracking-wider">
                     {parseInt(activity.time.split(':')[0]) >= 12 ? '下午' : '上午'}
                 </span>
-                <span className="text-3xl font-black text-slate-800 dark:text-white font-mono tracking-tighter leading-none">{activity.time}</span>
+                <span className="text-2xl font-black text-slate-800 dark:text-white font-mono tracking-tighter leading-none">{activity.time}</span>
             </div>
 
-            <div className="flex-1 px-5">
+            <div className="flex-1 px-4">
                 <h3 className="text-slate-900 dark:text-white font-black text-xl mb-1 leading-tight tracking-wide">{activity.title}</h3>
                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-bold">
                     <MapIcon className="w-3 h-3" />
@@ -167,6 +168,11 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   const [depTz, setDepTz] = useState(8);
   const [arrTz, setArrTz] = useState(9);
 
+  // Sightseeing Multi-add State
+  const [sightseeingList, setSightseeingList] = useState<{title: string; location: string}[]>([
+      { title: '', location: '' }
+  ]);
+
   // Notify parent about fullscreen modal state
   useEffect(() => {
       if (onToggleFullScreen) {
@@ -206,7 +212,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   });
 
   const isFormValid = modalMode === 'PLAN' 
-    ? !!newActivity.title 
+    ? (newActivity.type === 'sightseeing' && !editingActivityId ? sightseeingList.every(i => i.title.trim() !== '') : !!newActivity.title)
     : !!(newFlight.flightNumber && newFlight.departureCode && newFlight.arrivalCode);
 
   // Get Dynamic Title Props and Icon
@@ -341,6 +347,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
     setShowAddModal(false);
     setEditingActivityId(null);
     setModalMode('PLAN');
+    setSightseeingList([{ title: '', location: '' }]); // Reset list
     // Reset to defaults or basic time, but when adding new, we calculate in onClick
     setNewActivity({ 
         time: '11:35', 
@@ -407,25 +414,60 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
     }
 
     if (modalMode === 'PLAN') {
-        if (!newActivity.title) return;
-        
-        const activityData = {
-            id: editingActivityId || Date.now().toString(),
-            time: newActivity.time,
-            title: newActivity.title,
-            location: newActivity.location,
-            completed: false,
-            type: newActivity.type,
-            duration: newActivity.duration,
-            description: newActivity.description
-        };
+        // Multi-add Sightseeing Logic
+        if (newActivity.type === 'sightseeing' && !editingActivityId) {
+            // Check if lists are valid
+            if (sightseeingList.some(i => !i.title.trim())) return;
 
-        if (editingActivityId) {
-            updatedActivities[selectedDate] = updatedActivities[selectedDate].map(a => 
-                a.id === editingActivityId ? { ...a, ...activityData } : a
-            );
+            let currentTimeStr = newActivity.time;
+            const durationMins = Math.round(parseFloat((newActivity.duration || '2').replace('h', '')) * 60);
+
+            const newItems: Activity[] = sightseeingList.map((item, idx) => {
+                // Calculate time for this item
+                const [h, m] = currentTimeStr.split(':').map(Number);
+                const currentItemTime = currentTimeStr; // Store current
+
+                // Calculate NEXT time for the loop
+                const date = new Date();
+                date.setHours(h);
+                date.setMinutes(m + durationMins);
+                currentTimeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+                return {
+                    id: Date.now().toString() + idx, // Unique ID
+                    time: currentItemTime,
+                    title: item.title,
+                    location: item.location,
+                    completed: false,
+                    type: 'sightseeing',
+                    duration: newActivity.duration,
+                    description: newActivity.description
+                };
+            });
+            updatedActivities[selectedDate].push(...newItems);
+
         } else {
-            updatedActivities[selectedDate].push(activityData);
+            // Single Item Logic (Existing)
+            if (!newActivity.title) return;
+            
+            const activityData = {
+                id: editingActivityId || Date.now().toString(),
+                time: newActivity.time,
+                title: newActivity.title,
+                location: newActivity.location,
+                completed: false,
+                type: newActivity.type,
+                duration: newActivity.duration,
+                description: newActivity.description
+            };
+
+            if (editingActivityId) {
+                updatedActivities[selectedDate] = updatedActivities[selectedDate].map(a => 
+                    a.id === editingActivityId ? { ...a, ...activityData } : a
+                );
+            } else {
+                updatedActivities[selectedDate].push(activityData);
+            }
         }
 
     } else {
@@ -619,6 +661,23 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
     setShowRouteModal(false);
   };
 
+  // Handlers for Multi-Sightseeing
+  const handleAddSightseeingItem = () => {
+      setSightseeingList([...sightseeingList, { title: '', location: '' }]);
+  };
+
+  const handleRemoveSightseeingItem = (idx: number) => {
+      if (sightseeingList.length > 1) {
+          setSightseeingList(sightseeingList.filter((_, i) => i !== idx));
+      }
+  };
+
+  const handleSightseeingChange = (idx: number, field: 'title' | 'location', value: string) => {
+      const newList = [...sightseeingList];
+      newList[idx][field] = value;
+      setSightseeingList(newList);
+  };
+
   return (
     <div className="h-full flex flex-col relative bg-transparent">
       
@@ -782,6 +841,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
         onClick={() => { 
             setEditingActivityId(null); 
             setModalMode('PLAN');
+            setSightseeingList([{ title: '', location: '' }]);
             
             // Auto Calculate Next Start Time
             const nextTime = getNextStartTime();
@@ -864,20 +924,89 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                                   <button onClick={() => setNewActivity({...newActivity, type: 'transport'})} className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-xs font-bold transition-colors ${newActivity.type === 'transport' ? 'text-yellow-500 dark:text-yellow-400' : 'text-slate-400'}`}><BusIcon className="w-4 h-4" /> 交通移動</button>
                               </div>
 
-                              {/* Title */}
-                              <div>
-                                  <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">{activityConfig.label}</label>
-                                  <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3">
-                                      <span className="text-slate-400"><ActivityTitleIcon className="w-5 h-5" /></span>
-                                      <input 
-                                          type="text" 
-                                          placeholder={activityConfig.placeholder} 
-                                          className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" 
-                                          value={newActivity.title} 
-                                          onChange={e => setNewActivity({...newActivity, title: e.target.value})} 
-                                      />
+                              {/* Multi-add for Sightseeing (Only when creating new) */}
+                              {newActivity.type === 'sightseeing' && !editingActivityId ? (
+                                  <div className="space-y-3">
+                                      <div className="flex justify-between items-center px-1">
+                                          <label className="text-slate-500 text-[10px] font-bold block">景點列表 (依序新增)</label>
+                                          <span className="text-[10px] text-purple-500 font-bold bg-purple-500/10 px-2 py-0.5 rounded-full">批量模式</span>
+                                      </div>
+                                      
+                                      {sightseeingList.map((item, idx) => (
+                                          <div key={idx} className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-3 relative group">
+                                              <div className="absolute top-0 right-0 w-6 h-6 bg-slate-200 dark:bg-white/10 rounded-bl-xl flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                                  {idx + 1}
+                                              </div>
+                                              
+                                              <div className="flex flex-col gap-2">
+                                                  <div className="flex items-center gap-2">
+                                                      <CameraIcon className="w-4 h-4 text-slate-400" />
+                                                      <input 
+                                                          type="text" 
+                                                          placeholder="景點名稱" 
+                                                          className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-bold text-sm" 
+                                                          value={item.title} 
+                                                          onChange={e => handleSightseeingChange(idx, 'title', e.target.value)}
+                                                      />
+                                                  </div>
+                                                  <div className="h-px bg-slate-200 dark:bg-white/5 w-full"></div>
+                                                  <div className="flex items-center gap-2">
+                                                      <MapIcon className="w-4 h-4 text-slate-400" />
+                                                      <input 
+                                                          type="text" 
+                                                          placeholder="地點 (選填)" 
+                                                          className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none text-xs font-medium" 
+                                                          value={item.location} 
+                                                          onChange={e => handleSightseeingChange(idx, 'location', e.target.value)} 
+                                                      />
+                                                  </div>
+                                              </div>
+
+                                              {sightseeingList.length > 1 && (
+                                                  <button 
+                                                      onClick={() => handleRemoveSightseeingItem(idx)}
+                                                      className="absolute -right-2 -top-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                                  >
+                                                      <XMarkIcon className="w-3 h-3" />
+                                                  </button>
+                                              )}
+                                          </div>
+                                      ))}
+                                      
+                                      <button 
+                                          onClick={handleAddSightseeingItem}
+                                          className="w-full py-3 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl text-slate-400 font-bold text-xs flex items-center justify-center gap-1 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                                      >
+                                          <PlusIcon className="w-4 h-4" /> 新增下一個景點
+                                      </button>
                                   </div>
-                              </div>
+                              ) : (
+                                  <>
+                                      {/* Title */}
+                                      <div>
+                                          <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">{activityConfig.label}</label>
+                                          <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3">
+                                              <span className="text-slate-400"><ActivityTitleIcon className="w-5 h-5" /></span>
+                                              <input 
+                                                  type="text" 
+                                                  placeholder={activityConfig.placeholder} 
+                                                  className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" 
+                                                  value={newActivity.title} 
+                                                  onChange={e => setNewActivity({...newActivity, title: e.target.value})} 
+                                              />
+                                          </div>
+                                      </div>
+                                      
+                                      {/* Location */}
+                                      <div>
+                                          <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">地點 (輸入可跳轉地圖)</label>
+                                          <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3">
+                                              <span className="text-slate-400"><MapIcon className="w-5 h-5" /></span>
+                                              <input type="text" placeholder="輸入具體地址或地標" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} />
+                                          </div>
+                                      </div>
+                                  </>
+                              )}
                               
                               {/* Time & Duration */}
                               <div className="flex gap-4">
@@ -889,22 +1018,15 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                                       </div>
                                   </div>
                                   <div className="flex-1">
-                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">預計停留</label>
+                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">
+                                          {newActivity.type === 'sightseeing' && !editingActivityId && sightseeingList.length > 1 ? '每個景點停留' : '預計停留'}
+                                      </label>
                                       <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl px-4 flex items-center gap-3 h-[58px]">
                                           <span className="text-slate-400"><HourglassIcon className="w-5 h-5" /></span>
                                           <select className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold text-sm" value={newActivity.duration} onChange={e => setNewActivity({...newActivity, duration: e.target.value})}>
                                               {Array.from({ length: 36 }, (_, i) => (i + 1) * 0.5).map(val => (<option key={val} value={`${val}h`} className="bg-white dark:bg-[#1f2937]">{val}h</option>))}
                                           </select>
                                       </div>
-                                  </div>
-                              </div>
-                              
-                              {/* Location */}
-                              <div>
-                                  <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">地點 (輸入可跳轉地圖)</label>
-                                  <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3">
-                                      <span className="text-slate-400"><MapIcon className="w-5 h-5" /></span>
-                                      <input type="text" placeholder="輸入具體地址或地標" className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} />
                                   </div>
                               </div>
                               
