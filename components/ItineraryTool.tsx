@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trip, Activity, FlightInfo } from '../types';
 import { PlusIcon, CoffeeIcon, CameraIcon, DiningIcon, BusIcon, TagIcon, MapIcon, PlaneIcon, ArrowLongRightIcon, ClockIcon, HourglassIcon, LockClosedIcon, LockOpenIcon, TrashIcon, ChevronRightIcon, NavigationArrowIcon, ChevronUpIcon, ChevronDownIcon, DocumentTextIcon, CloudIcon, XMarkIcon, CalendarIcon, CheckIcon, SparklesIcon } from './Icons';
 
@@ -28,6 +28,40 @@ const getTypeColor = (type: string) => {
         case 'flight': return { hex: '#38bdf8', tw: 'sky-400', bg: 'bg-sky-400' };
         default: return { hex: '#94a3b8', tw: 'slate-400', bg: 'bg-slate-400' };
     }
+};
+
+// Marquee Component for scrolling overflow text
+const MarqueeText: React.FC<{ text: string, className?: string }> = ({ text, className = "" }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const measureRef = useRef<HTMLSpanElement>(null);
+    const [isOverflow, setIsOverflow] = useState(false);
+
+    useEffect(() => {
+        const checkOverflow = () => {
+            if (containerRef.current && measureRef.current) {
+                setIsOverflow(measureRef.current.offsetWidth > containerRef.current.clientWidth);
+            }
+        };
+        
+        checkOverflow();
+        // Re-check on resize could be added here if needed, but simplified for performance
+    }, [text]);
+
+    return (
+        <div ref={containerRef} className={`relative overflow-hidden ${className}`}>
+            {/* Measurement Element (Invisible) */}
+            <span ref={measureRef} className="absolute opacity-0 pointer-events-none whitespace-nowrap">{text}</span>
+            
+            {isOverflow ? (
+                <div className="flex whitespace-nowrap animate-marquee-scroll" style={{ width: 'max-content' }}>
+                    <span className="mr-8">{text}</span>
+                    <span className="mr-8">{text}</span>
+                </div>
+            ) : (
+                <div className="truncate">{text}</div>
+            )}
+        </div>
+    );
 };
 
 const FlightCard: React.FC<{ activity: Activity, onClick: () => void }> = ({ activity, onClick }) => {
@@ -118,26 +152,35 @@ const ActivityCard: React.FC<{ activity: Activity, onClick: () => void }> = ({ a
             }}
         >
             {/* Reduced width from min-w-[60px] to min-w-[48px], reduced pr-4 to pr-2, font 3xl to 2xl */}
-            <div className="flex flex-col items-center justify-center min-w-[48px] pr-2 border-r border-slate-200 dark:border-white/10">
+            <div className="flex flex-col items-center justify-center min-w-[48px] pr-2 border-r border-slate-200 dark:border-white/10 flex-shrink-0">
                 <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold mb-0.5 uppercase tracking-wider">
                     {parseInt(activity.time.split(':')[0]) >= 12 ? '下午' : '上午'}
                 </span>
                 <span className="text-2xl font-black text-slate-800 dark:text-white font-mono tracking-tighter leading-none">{activity.time}</span>
             </div>
 
-            <div className="flex-1 px-4">
-                <h3 className="text-slate-900 dark:text-white font-black text-xl mb-1 leading-tight tracking-wide">{activity.title}</h3>
+            <div className="flex-1 px-4 min-w-0 overflow-hidden">
+                <MarqueeText 
+                    text={activity.title}
+                    className="text-slate-900 dark:text-white font-black text-xl mb-1 leading-tight tracking-wide"
+                />
+                
                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-bold">
-                    <MapIcon className="w-3 h-3" />
-                    <span className="truncate max-w-[140px]">{activity.location || activity.title}</span>
-                    <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-600 mx-1"></span>
-                    <span>{activity.duration || '1h'}</span>
+                    <MapIcon className="w-3 h-3 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                        <MarqueeText 
+                            text={activity.location || activity.title} 
+                            className=""
+                        />
+                    </div>
+                    <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-600 mx-1 flex-shrink-0"></span>
+                    <span className="flex-shrink-0">{activity.duration || '1h'}</span>
                 </div>
             </div>
 
             <button 
                 onClick={handleMapClick}
-                className="w-10 h-10 rounded-xl flex items-center justify-center border border-white/50 dark:border-white/10 active:scale-90 transition-transform bg-white/50 dark:bg-transparent"
+                className="w-10 h-10 rounded-xl flex items-center justify-center border border-white/50 dark:border-white/10 active:scale-90 transition-transform bg-white/50 dark:bg-transparent flex-shrink-0"
                 style={{ color: typeColor.hex }}
             >
                 {activity.type === 'sightseeing' && <CameraIcon className="w-5 h-5" />}
@@ -149,6 +192,7 @@ const ActivityCard: React.FC<{ activity: Activity, onClick: () => void }> = ({ a
 };
 
 const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggleTheme, onToggleFullScreen }) => {
+  // ... (rest of the code remains unchanged)
   const [selectedDate, setSelectedDate] = useState<string>(trip.startDate);
   const [dates, setDates] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -296,19 +340,14 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       return `DAY ${diffDays + 1}`;
   };
 
-  // Logic to determine what to show in the Header based on Multi-city logic
+  // ... (keeping other helper functions same as provided in previous context)
   const getHeaderLocation = () => {
-      // Single Trip
       if (trip.type === 'Single' || !trip.stops) {
           return <span className="truncate">{trip.destination.split(',')[0]}</span>;
       }
-
-      // Multi Trip Transition Check
-      // Check if selectedDate is a transition day (End of Stop A AND Start of Stop B)
       for (let i = 0; i < trip.stops.length - 1; i++) {
           const currentStop = trip.stops[i];
           const nextStop = trip.stops[i+1];
-          
           if (selectedDate === currentStop.endDate && selectedDate === nextStop.startDate) {
               return (
                   <div className="flex items-center gap-2 overflow-hidden min-w-0">
@@ -319,31 +358,21 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
               );
           }
       }
-
-      // If not transition, find current stop
       const activeStop = trip.stops.find(s => selectedDate >= s.startDate && selectedDate <= s.endDate);
       return <span className="truncate">{activeStop ? activeStop.destination : trip.destination.split(',')[0]}</span>;
   };
 
-  // Determine the exact city string for weather search
   const getWeatherCity = () => {
-      // Single Trip
       if (trip.type === 'Single' || !trip.stops || trip.stops.length === 0) {
           return trip.destination;
       }
-
-      // Multi Trip Logic
       for (let i = 0; i < trip.stops.length - 1; i++) {
           const currentStop = trip.stops[i];
           const nextStop = trip.stops[i+1];
-          
-          // If selectedDate is a transition day, search the ARRIVAL city (nextStop)
           if (selectedDate === currentStop.endDate && selectedDate === nextStop.startDate) {
               return nextStop.destination;
           }
       }
-
-      // Normal day: find active stop
       const activeStop = trip.stops.find(s => selectedDate >= s.startDate && selectedDate <= s.endDate);
       return activeStop ? activeStop.destination : trip.destination;
   };
@@ -352,9 +381,8 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
     setShowAddModal(false);
     setEditingActivityId(null);
     setModalMode('PLAN');
-    setSightseeingList([{ title: '', location: '', duration: '2h' }]); // Reset list
+    setSightseeingList([{ title: '', location: '', duration: '2h' }]);
     setDailyTheme('');
-    // Reset to defaults or basic time, but when adding new, we calculate in onClick
     setNewActivity({ 
         time: '11:35', 
         title: '', 
@@ -381,35 +409,24 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   const getNextStartTime = () => {
       if (!currentActivities || currentActivities.length === 0) return '09:00';
       const last = currentActivities[currentActivities.length - 1];
-      
       let h = 0, m = 0;
-      
       if (last.type === 'flight' && last.flightInfo) {
-          // If flight, next activity starts at arrival time
           const parts = last.flightInfo.arrivalTime.split(':');
           h = parseInt(parts[0]) || 0;
           m = parseInt(parts[1]) || 0;
       } else {
-          // Normal activity: start time + duration
           const parts = last.time.split(':');
           h = parseInt(parts[0]) || 0;
           m = parseInt(parts[1]) || 0;
-          
-          let durationMins = 60; // default 1h
+          let durationMins = 60; 
           if (last.duration) {
-              // Handle "2h" or "1.5h"
               durationMins = Math.round(parseFloat(last.duration.replace('h', '')) * 60);
           }
-          
           m += durationMins;
       }
-      
-      // Handle minute overflow
       h += Math.floor(m / 60);
       m = m % 60;
-      // Handle day overflow (keep within 24h for time picker)
       h = h % 24;
-      
       return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   };
 
@@ -427,29 +444,20 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
     }
 
     if (modalMode === 'PLAN') {
-        // Multi-add Sightseeing Logic
         if (newActivity.type === 'sightseeing' && !editingActivityId) {
-            // Check if lists are valid
             if (sightseeingList.some(i => !i.title.trim())) return;
-
             let currentTimeStr = newActivity.time;
-            
             const newItems: Activity[] = sightseeingList.map((item, idx) => {
-                // Calculate time for this item
                 const [h, m] = currentTimeStr.split(':').map(Number);
-                const currentItemTime = currentTimeStr; // Store current
-
-                // Calculate NEXT time for the loop based on ITEM duration
+                const currentItemTime = currentTimeStr;
                 const itemDuration = item.duration || '2h';
                 const durationMins = Math.round(parseFloat(itemDuration.replace('h', '')) * 60);
-                
                 const date = new Date();
                 date.setHours(h);
                 date.setMinutes(m + durationMins);
                 currentTimeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-
                 return {
-                    id: Date.now().toString() + idx, // Unique ID
+                    id: Date.now().toString() + idx,
                     time: currentItemTime,
                     title: item.title,
                     location: item.location,
@@ -460,11 +468,8 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                 };
             });
             updatedActivities[selectedDate].push(...newItems);
-
         } else {
-            // Single Item Logic (Existing)
             if (!newActivity.title) return;
-            
             const activityData = {
                 id: editingActivityId || Date.now().toString(),
                 time: newActivity.time,
@@ -475,7 +480,6 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                 duration: newActivity.duration,
                 description: newActivity.description
             };
-
             if (editingActivityId) {
                 updatedActivities[selectedDate] = updatedActivities[selectedDate].map(a => 
                     a.id === editingActivityId ? { ...a, ...activityData } : a
@@ -484,10 +488,8 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                 updatedActivities[selectedDate].push(activityData);
             }
         }
-
     } else {
         if (!newFlight.flightNumber || !newFlight.departureCode || !newFlight.arrivalCode) return;
-        
         const flightData = {
             id: editingActivityId || Date.now().toString(),
             time: newFlight.departureTime,
@@ -497,7 +499,6 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
             type: 'flight' as const,
             flightInfo: newFlight
         };
-
         if (editingActivityId) {
              updatedActivities[selectedDate] = updatedActivities[selectedDate].map(a => 
                 a.id === editingActivityId ? { ...a, ...flightData } : a
@@ -531,9 +532,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       let endDateTime = '';
 
       const formatDateForGCal = (dateStr: string, timeStr: string) => {
-           // Create Date object assuming local time input
            const d = new Date(`${dateStr}T${timeStr}`);
-           // Convert to ISO string (UTC) and strip delimiters for Google Calendar "Z" format
            return d.toISOString().replace(/-|:|\.\d+/g, "");
       };
 
@@ -551,13 +550,10 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
           title = newActivity.title;
           details = newActivity.description || '';
           location = newActivity.location || '';
-          
           const duration = parseFloat((newActivity.duration || '1').replace('h', ''));
-          
           startDateTime = formatDateForGCal(selectedDate, newActivity.time);
           endDateTime = addHours(selectedDate, newActivity.time, duration);
       } else {
-          // Flight
            if(!newFlight.flightNumber || !newFlight.departureCode) {
               alert('請先輸入航班資訊');
               return;
@@ -565,7 +561,6 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
           title = `✈️ ${newFlight.departureCode} ➝ ${newFlight.arrivalCode} (${newFlight.flightNumber})`;
           details = `航班: ${newFlight.flightNumber}\n機型: ${newFlight.planeType}\n出發: ${newFlight.departureTime} @ ${newFlight.departureCode}\n抵達: ${newFlight.arrivalTime} @ ${newFlight.arrivalCode}`;
           location = `${newFlight.departureCode} Airport`;
-          
           startDateTime = formatDateForGCal(newFlight.departureDate, newFlight.departureTime);
           endDateTime = formatDateForGCal(newFlight.arrivalDate, newFlight.arrivalTime);
       }
@@ -575,7 +570,6 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   };
 
   const handleWeatherSearch = () => {
-    // Use the dynamic city based on current logic (transition day sensitive)
     const targetCity = getWeatherCity();
     const query = encodeURIComponent(`${targetCity} weather`);
     window.open(`https://www.google.com/search?q=${query}`, '_blank');
@@ -598,7 +592,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   };
 
   const onDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // Necessary for drop to work
+    e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
 
@@ -695,6 +689,16 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
 
   return (
     <div className="h-full flex flex-col relative bg-transparent">
+        {/* Style injection for Marquee Animation */}
+        <style>{`
+            @keyframes marquee-scroll {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(-50%); }
+            }
+            .animate-marquee-scroll {
+                animation: marquee-scroll 10s linear infinite;
+            }
+        `}</style>
       
       {/* 1. Header (Reduced height h-28) - Layout Optimization */}
       <div className="h-28 galaxy-header rounded-b-[40px] shadow-2xl shadow-blue-900/20 z-20 relative flex flex-col justify-center px-6 pt-2 flex-shrink-0">
@@ -864,6 +868,8 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
         )}
       </div>
 
+      {/* ... (Modals and Floating Button code remains unchanged) ... */}
+      
       {/* 5. Floating Add Button */}
       <button 
         onClick={() => { 
