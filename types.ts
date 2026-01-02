@@ -31,6 +31,7 @@ export interface Trip {
   type: TripType;
   stops?: Stop[]; // Array of stops for Multi-city trips
   activities: Record<string, Activity[]>; // Date string key -> Activities
+  themes?: Record<string, string>; // Date string key -> Theme Name
   expenses: Expense[];
   packingList: PackingItem[];
   budget?: Budget;

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Trip, Activity, FlightInfo } from '../types';
-import { PlusIcon, CoffeeIcon, CameraIcon, DiningIcon, BusIcon, TagIcon, MapIcon, PlaneIcon, ArrowLongRightIcon, ClockIcon, HourglassIcon, LockClosedIcon, LockOpenIcon, TrashIcon, ChevronRightIcon, NavigationArrowIcon, ChevronUpIcon, ChevronDownIcon, DocumentTextIcon, CloudIcon, XMarkIcon, CalendarIcon, CheckIcon } from './Icons';
+import { PlusIcon, CoffeeIcon, CameraIcon, DiningIcon, BusIcon, TagIcon, MapIcon, PlaneIcon, ArrowLongRightIcon, ClockIcon, HourglassIcon, LockClosedIcon, LockOpenIcon, TrashIcon, ChevronRightIcon, NavigationArrowIcon, ChevronUpIcon, ChevronDownIcon, DocumentTextIcon, CloudIcon, XMarkIcon, CalendarIcon, CheckIcon, SparklesIcon } from './Icons';
 
 interface Props {
   trip: Trip;
@@ -153,7 +153,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   const [dates, setDates] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRouteModal, setShowRouteModal] = useState(false);
-  const [modalMode, setModalMode] = useState<'PLAN' | 'FLIGHT'>('PLAN');
+  const [modalMode, setModalMode] = useState<'PLAN' | 'FLIGHT' | 'THEME'>('PLAN');
   const [isLocked, setIsLocked] = useState(true);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   
@@ -169,9 +169,12 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
   const [arrTz, setArrTz] = useState(9);
 
   // Sightseeing Multi-add State
-  const [sightseeingList, setSightseeingList] = useState<{title: string; location: string}[]>([
-      { title: '', location: '' }
+  const [sightseeingList, setSightseeingList] = useState<{title: string; location: string; duration: string}[]>([
+      { title: '', location: '', duration: '2h' }
   ]);
+
+  // Daily Theme State
+  const [dailyTheme, setDailyTheme] = useState('');
 
   // Notify parent about fullscreen modal state
   useEffect(() => {
@@ -213,7 +216,9 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
 
   const isFormValid = modalMode === 'PLAN' 
     ? (newActivity.type === 'sightseeing' && !editingActivityId ? sightseeingList.every(i => i.title.trim() !== '') : !!newActivity.title)
-    : !!(newFlight.flightNumber && newFlight.departureCode && newFlight.arrivalCode);
+    : modalMode === 'THEME' 
+        ? !!dailyTheme.trim()
+        : !!(newFlight.flightNumber && newFlight.departureCode && newFlight.arrivalCode);
 
   // Get Dynamic Title Props and Icon
   const getActivityConfig = (type: string) => {
@@ -347,7 +352,8 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
     setShowAddModal(false);
     setEditingActivityId(null);
     setModalMode('PLAN');
-    setSightseeingList([{ title: '', location: '' }]); // Reset list
+    setSightseeingList([{ title: '', location: '', duration: '2h' }]); // Reset list
+    setDailyTheme('');
     // Reset to defaults or basic time, but when adding new, we calculate in onClick
     setNewActivity({ 
         time: '11:35', 
@@ -413,6 +419,13 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       updatedActivities[selectedDate] = [];
     }
 
+    if (modalMode === 'THEME') {
+        const updatedThemes = { ...trip.themes, [selectedDate]: dailyTheme };
+        onUpdateTrip({ ...trip, themes: updatedThemes });
+        closeModal();
+        return;
+    }
+
     if (modalMode === 'PLAN') {
         // Multi-add Sightseeing Logic
         if (newActivity.type === 'sightseeing' && !editingActivityId) {
@@ -420,14 +433,16 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
             if (sightseeingList.some(i => !i.title.trim())) return;
 
             let currentTimeStr = newActivity.time;
-            const durationMins = Math.round(parseFloat((newActivity.duration || '2').replace('h', '')) * 60);
-
+            
             const newItems: Activity[] = sightseeingList.map((item, idx) => {
                 // Calculate time for this item
                 const [h, m] = currentTimeStr.split(':').map(Number);
                 const currentItemTime = currentTimeStr; // Store current
 
-                // Calculate NEXT time for the loop
+                // Calculate NEXT time for the loop based on ITEM duration
+                const itemDuration = item.duration || '2h';
+                const durationMins = Math.round(parseFloat(itemDuration.replace('h', '')) * 60);
+                
                 const date = new Date();
                 date.setHours(h);
                 date.setMinutes(m + durationMins);
@@ -440,7 +455,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                     location: item.location,
                     completed: false,
                     type: 'sightseeing',
-                    duration: newActivity.duration,
+                    duration: itemDuration,
                     description: newActivity.description
                 };
             });
@@ -663,7 +678,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
 
   // Handlers for Multi-Sightseeing
   const handleAddSightseeingItem = () => {
-      setSightseeingList([...sightseeingList, { title: '', location: '' }]);
+      setSightseeingList([...sightseeingList, { title: '', location: '', duration: '2h' }]);
   };
 
   const handleRemoveSightseeingItem = (idx: number) => {
@@ -672,7 +687,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
       }
   };
 
-  const handleSightseeingChange = (idx: number, field: 'title' | 'location', value: string) => {
+  const handleSightseeingChange = (idx: number, field: 'title' | 'location' | 'duration', value: string) => {
       const newList = [...sightseeingList];
       newList[idx][field] = value;
       setSightseeingList(newList);
@@ -769,6 +784,19 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
 
       {/* 4. Timeline List */}
       <div className="flex-grow overflow-y-auto px-6 pt-2 space-y-0 no-scrollbar relative pb-32">
+        {/* Daily Theme Display */}
+        {trip.themes?.[selectedDate] && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-fuchsia-500/20 rounded-2xl flex items-center gap-3 shadow-sm backdrop-blur-sm">
+                <div className="w-10 h-10 rounded-full bg-fuchsia-500/10 flex items-center justify-center text-fuchsia-500 shrink-0">
+                    <SparklesIcon className="w-5 h-5" />
+                </div>
+                <div>
+                    <p className="text-[10px] font-bold text-fuchsia-500/70 uppercase tracking-widest mb-0.5">DAILY THEME</p>
+                    <h3 className="text-slate-800 dark:text-white font-bold text-lg leading-tight">{trip.themes[selectedDate]}</h3>
+                </div>
+            </div>
+        )}
+
         {currentActivities.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-slate-400 dark:text-slate-700 space-y-4 mt-8 opacity-60">
             <CoffeeIcon className="w-24 h-24 stroke-1" />
@@ -841,7 +869,8 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
         onClick={() => { 
             setEditingActivityId(null); 
             setModalMode('PLAN');
-            setSightseeingList([{ title: '', location: '' }]);
+            setSightseeingList([{ title: '', location: '', duration: '2h' }]);
+            setDailyTheme(trip.themes?.[selectedDate] || '');
             
             // Auto Calculate Next Start Time
             const nextTime = getNextStartTime();
@@ -876,7 +905,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                   {/* Modal Header */}
                   <div className="flex justify-between items-center mb-6">
                       <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-wide">
-                          {editingActivityId ? '編輯項目' : '新增項目'}
+                          {modalMode === 'THEME' ? '每日主題' : (editingActivityId ? '編輯項目' : '新增項目')}
                       </h3>
                       <button onClick={closeModal} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
                           <XMarkIcon className="w-5 h-5" />
@@ -886,35 +915,63 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                   {/* Mode Tabs - Sliding Gradient Glass */}
                   <div className="bg-slate-100/80 dark:bg-white/5 p-1.5 rounded-[20px] flex relative h-14 items-center backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-inner mb-6 shrink-0">
                     <div 
-                        className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[16px] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg backdrop-blur-md
+                        className={`absolute top-1.5 bottom-1.5 w-[calc(33.33%-6px)] rounded-[16px] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg backdrop-blur-md
                         ${modalMode === 'PLAN' 
                             ? 'left-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-purple-500/30' 
-                            : 'left-[50%] bg-gradient-to-r from-sky-400 to-blue-500 shadow-blue-500/30'}
+                            : modalMode === 'FLIGHT'
+                                ? 'left-[calc(33.33%+3px)] bg-gradient-to-r from-sky-400 to-blue-500 shadow-blue-500/30'
+                                : 'left-[calc(66.66%)] bg-gradient-to-r from-pink-500 to-rose-500 shadow-pink-500/30'
+                        }
                         `}
                     ></div>
                     
                     <button 
                         type="button"
                         onClick={() => setModalMode('PLAN')} 
-                        className={`flex-1 relative z-10 font-bold text-sm transition-colors duration-300 flex items-center justify-center gap-2 ${modalMode === 'PLAN' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                        className={`flex-1 relative z-10 font-bold text-xs sm:text-sm transition-colors duration-300 flex items-center justify-center gap-1 sm:gap-2 ${modalMode === 'PLAN' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
                     >
                         <MapIcon className="w-4 h-4" /> 
-                        一般行程
+                        一般
                     </button>
                     <button 
                         type="button"
                         onClick={() => setModalMode('FLIGHT')} 
-                        className={`flex-1 relative z-10 font-bold text-sm transition-colors duration-300 flex items-center justify-center gap-2 ${modalMode === 'FLIGHT' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                        className={`flex-1 relative z-10 font-bold text-xs sm:text-sm transition-colors duration-300 flex items-center justify-center gap-1 sm:gap-2 ${modalMode === 'FLIGHT' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
                     >
                         <PlaneIcon className="w-4 h-4" /> 
-                        航班資訊
+                        航班
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={() => setModalMode('THEME')} 
+                        className={`flex-1 relative z-10 font-bold text-xs sm:text-sm transition-colors duration-300 flex items-center justify-center gap-1 sm:gap-2 ${modalMode === 'THEME' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                    >
+                        <SparklesIcon className="w-4 h-4" /> 
+                        主題
                     </button>
                  </div>
 
                   {/* Scrollable Content */}
                   <div className="flex-grow overflow-y-auto no-scrollbar space-y-4 pb-4">
                       
-                      {modalMode === 'PLAN' ? (
+                      {modalMode === 'THEME' ? (
+                          <div className="space-y-4 animate-fade-in">
+                              <div>
+                                  <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">本日主題</label>
+                                  <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-3">
+                                      <span className="text-slate-400"><SparklesIcon className="w-5 h-5" /></span>
+                                      <input 
+                                          type="text" 
+                                          placeholder="例如：歷史文化之旅、購物狂歡日" 
+                                          className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-medium" 
+                                          value={dailyTheme} 
+                                          onChange={e => setDailyTheme(e.target.value)} 
+                                      />
+                                  </div>
+                                  <p className="text-[10px] text-slate-400 mt-2 ml-1">設定主題後將會顯示在行程列表的最上方。</p>
+                              </div>
+                          </div>
+                      ) : modalMode === 'PLAN' ? (
                           <div className="space-y-4 animate-fade-in">
                               {/* Type Selection */}
                               <div className="relative p-1 rounded-2xl bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 backdrop-blur-xl flex h-14 shadow-inner mb-6">
@@ -950,15 +1007,27 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                                                       />
                                                   </div>
                                                   <div className="h-px bg-slate-200 dark:bg-white/5 w-full"></div>
-                                                  <div className="flex items-center gap-2">
-                                                      <MapIcon className="w-4 h-4 text-slate-400" />
-                                                      <input 
-                                                          type="text" 
-                                                          placeholder="地點 (選填)" 
-                                                          className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none text-xs font-medium" 
-                                                          value={item.location} 
-                                                          onChange={e => handleSightseeingChange(idx, 'location', e.target.value)} 
-                                                      />
+                                                  <div className="flex gap-2">
+                                                      <div className="flex-1 flex items-center gap-2">
+                                                          <MapIcon className="w-4 h-4 text-slate-400" />
+                                                          <input 
+                                                              type="text" 
+                                                              placeholder="地點 (選填)" 
+                                                              className="bg-transparent w-full text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none text-xs font-medium" 
+                                                              value={item.location} 
+                                                              onChange={e => handleSightseeingChange(idx, 'location', e.target.value)} 
+                                                          />
+                                                      </div>
+                                                      <div className="w-24 border-l border-slate-200 dark:border-white/5 pl-2 flex items-center gap-1">
+                                                          <HourglassIcon className="w-3.5 h-3.5 text-slate-400" />
+                                                          <select 
+                                                              className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold text-xs" 
+                                                              value={item.duration} 
+                                                              onChange={e => handleSightseeingChange(idx, 'duration', e.target.value)}
+                                                          >
+                                                              {Array.from({ length: 36 }, (_, i) => (i + 1) * 0.5).map(val => (<option key={val} value={`${val}h`} className="bg-white dark:bg-[#1f2937]">{val}h</option>))}
+                                                          </select>
+                                                      </div>
                                                   </div>
                                               </div>
 
@@ -1008,7 +1077,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                                   </>
                               )}
                               
-                              {/* Time & Duration */}
+                              {/* Time & Duration (Show global duration only if NOT in multi-add mode) */}
                               <div className="flex gap-4">
                                   <div className="flex-1">
                                       <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">開始時間</label>
@@ -1017,17 +1086,17 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                                           <input type="time" className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold appearance-none" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} />
                                       </div>
                                   </div>
-                                  <div className="flex-1">
-                                      <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">
-                                          {newActivity.type === 'sightseeing' && !editingActivityId && sightseeingList.length > 1 ? '每個景點停留' : '預計停留'}
-                                      </label>
-                                      <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl px-4 flex items-center gap-3 h-[58px]">
-                                          <span className="text-slate-400"><HourglassIcon className="w-5 h-5" /></span>
-                                          <select className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold text-sm" value={newActivity.duration} onChange={e => setNewActivity({...newActivity, duration: e.target.value})}>
-                                              {Array.from({ length: 36 }, (_, i) => (i + 1) * 0.5).map(val => (<option key={val} value={`${val}h`} className="bg-white dark:bg-[#1f2937]">{val}h</option>))}
-                                          </select>
+                                  {!(newActivity.type === 'sightseeing' && !editingActivityId) && (
+                                      <div className="flex-1">
+                                          <label className="text-slate-500 text-[10px] font-bold mb-1.5 block ml-1">預計停留</label>
+                                          <div className="bg-slate-50 dark:bg-[#1f2937] border border-slate-200 dark:border-white/5 rounded-2xl px-4 flex items-center gap-3 h-[58px]">
+                                              <span className="text-slate-400"><HourglassIcon className="w-5 h-5" /></span>
+                                              <select className="bg-transparent w-full text-slate-800 dark:text-white focus:outline-none font-bold text-sm" value={newActivity.duration} onChange={e => setNewActivity({...newActivity, duration: e.target.value})}>
+                                                  {Array.from({ length: 36 }, (_, i) => (i + 1) * 0.5).map(val => (<option key={val} value={`${val}h`} className="bg-white dark:bg-[#1f2937]">{val}h</option>))}
+                                              </select>
+                                          </div>
                                       </div>
-                                  </div>
+                                  )}
                               </div>
                               
                               {/* Notes */}
@@ -1115,7 +1184,7 @@ const ItineraryTool: React.FC<Props> = ({ trip, onUpdateTrip, isDarkMode, toggle
                   <div className="pt-2 flex gap-3 pb-safe mt-auto">
                       {editingActivityId && <button onClick={handleDeleteActivity} className="w-14 flex items-center justify-center rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20"><TrashIcon className="w-5 h-5" /></button>}
                       <button onClick={handleAddToCalendar} className="w-14 flex items-center justify-center rounded-2xl bg-orange-100 text-orange-500 border border-orange-200 dark:bg-orange-500/10 dark:border-orange-500/20"><CalendarIcon className="w-5 h-5" /></button>
-                      <button onClick={handleSaveActivity} disabled={!isFormValid} className={`flex-1 py-4 rounded-2xl font-bold border transition-all duration-300 shadow-lg ${isFormValid ? 'bg-[#38bdf8] text-white border-transparent shadow-blue-500/30' : 'bg-slate-100 dark:bg-[#1f2937] text-slate-500 border-slate-200 dark:border-white/5 cursor-not-allowed'}`}>{isFormValid ? (editingActivityId ? '儲存變更' : '確認新增') : '請填寫完整資訊'}</button>
+                      <button onClick={handleSaveActivity} disabled={!isFormValid} className={`flex-1 py-4 rounded-2xl font-bold border transition-all duration-300 shadow-lg ${isFormValid ? 'bg-[#38bdf8] text-white border-transparent shadow-blue-500/30' : 'bg-slate-100 dark:bg-[#1f2937] text-slate-500 border-slate-200 dark:border-white/5 cursor-not-allowed'}`}>{isFormValid ? (editingActivityId || modalMode === 'THEME' ? '儲存變更' : '確認新增') : '請填寫完整資訊'}</button>
                   </div>
               </div>
           </div>
